@@ -44,9 +44,15 @@ vlm = [
 pipeline = [
     "langgraph>=0.2",
     "moviepy>=2.0",
+    "edge-tts>=6.1",
+]
+web = [
+    "fastapi>=0.111",
+    "uvicorn>=0.29",
+    "gradio>=4.20",
 ]
 all = [
-    "videoqa-gate[ml,vlm,pipeline]",
+    "videoqa-gate[ml,vlm,pipeline,web]",
 ]
 dev = [
     "pytest>=8.0",
@@ -55,7 +61,7 @@ dev = [
 ]
 
 [project.scripts]
-videoqa = "src.quality_gate:main"
+videoqa = "src.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
