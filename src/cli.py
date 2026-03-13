@@ -68,6 +68,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     print("[4/5] Preparing video clips...")
     video_clips = []
     video_provider = args.video_provider
+    n_candidates = getattr(args, 'candidates', 1)
 
     if video_provider and video_provider != "placeholder":
         from src.pipeline.generators.ai_video import AIVideoGenerator
@@ -77,23 +78,39 @@ def cmd_generate(args: argparse.Namespace) -> int:
             output_dir=str(output_dir),
             poll_timeout=600,
         )
+
         for i, scene in enumerate(script.scenes):
-            print(f"    [{i+1}/{len(script.scenes)}] Generating: {scene.visual_description[:50]}...")
-            try:
-                clip = ai_gen.generate(
-                    prompt=scene.visual_description,
-                    provider=video_provider,
-                    duration=scene.duration_hint,
-                    width=1080,
-                    height=1920,
-                )
-                video_clips.append(clip.local_path)
-                print(f"    -> {clip.local_path}")
-            except Exception as e:
-                print(f"    -> Failed: {e}, using placeholder")
+            print(f"    [{i+1}/{len(script.scenes)}] {scene.visual_description[:50]}...")
+
+            candidates = []
+            for c in range(n_candidates):
+                tag = f"s{i:02d}_c{c}" if n_candidates > 1 else f"s{i:02d}"
+                try:
+                    clip = ai_gen.generate(
+                        prompt=scene.visual_description,
+                        provider=video_provider,
+                        duration=scene.duration_hint,
+                        width=1080,
+                        height=1920,
+                    )
+                    candidates.append(clip.local_path)
+                except Exception as e:
+                    logger.warning("    Candidate %d failed: %s", c, e)
+
+            if not candidates:
+                print(f"    -> All candidates failed, using placeholder")
                 clip_path = str(output_dir / f"clip_{i:03d}.mp4")
                 _generate_placeholder_clip(clip_path, scene.visual_description, scene.duration_hint)
                 video_clips.append(clip_path)
+            elif len(candidates) == 1:
+                video_clips.append(candidates[0])
+                print(f"    -> {candidates[0]}")
+            else:
+                # Score and pick best
+                from src.quality_gate.clip_scorer import pick_best
+                best_path, best_score = pick_best(candidates, prompt=scene.visual_description)
+                video_clips.append(best_path)
+                print(f"    -> Best of {len(candidates)}: {os.path.basename(best_path)} (score={best_score.score:.2f})")
     else:
         for i, scene in enumerate(script.scenes):
             clip_path = str(output_dir / f"clip_{i:03d}.mp4")
@@ -286,7 +303,8 @@ def build_parser() -> argparse.ArgumentParser:
     gen_parser.add_argument("--tts-provider", default="edge-tts", choices=["edge-tts", "elevenlabs"])
     gen_parser.add_argument("--llm-provider", default=None, choices=["openai", "gemini", "fallback"])
     gen_parser.add_argument("--bgm-library", default=None, help="Path to BGM library directory")
-    gen_parser.add_argument("--video-provider", default="placeholder", choices=["veo", "kling", "runway", "placeholder"], help="Video generation provider")
+    gen_parser.add_argument("--video-provider", default="placeholder", choices=["veo", "seedance", "kling", "runway", "placeholder"], help="Video generation provider")
+    gen_parser.add_argument("--candidates", type=int, default=1, help="Generate N candidates per scene, pick best (Route B)")
     gen_parser.add_argument("--skip-eval", action="store_true", help="Skip quality evaluation")
     gen_parser.set_defaults(func=cmd_generate)
 
