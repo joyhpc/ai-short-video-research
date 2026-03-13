@@ -1,0 +1,102 @@
+# ==========================================================================
+# Pipeline Configuration
+# ==========================================================================
+#
+# Controls video generation providers, retry policies, composition
+# settings, and output preferences.
+
+# --------------------------------------------------------------------------
+# Generation providers
+# --------------------------------------------------------------------------
+generation:
+  video:
+    default_provider: "kling"
+    providers:
+      kling:
+        api_base: "https://api.klingai.com"
+        model: "kling-v1"
+        default_duration: 5.0
+        default_resolution: "1080x1920"
+        max_concurrent: 2
+      runway:
+        api_base: "https://api.runwayml.com"
+        model: "gen-3-alpha"
+        default_duration: 5.0
+        default_resolution: "1080x1920"
+        max_concurrent: 1
+
+  tts:
+    default_provider: "edge-tts"
+    providers:
+      edge-tts:
+        default_voice: "zh-CN-XiaoxiaoNeural"
+        rate: "+0%"
+        pitch: "+0Hz"
+      elevenlabs:
+        model: "eleven_multilingual_v2"
+        default_voice: "Rachel"
+
+  bgm:
+    library_path: "./assets/bgm"
+    default_volume: 0.15
+    fade_in_s: 1.0
+    fade_out_s: 2.0
+
+  subtitles:
+    method: "whisper"
+    model_size: "base"
+    language: "zh"
+    max_chars_per_line: 20
+
+# --------------------------------------------------------------------------
+# Retry policies
+# --------------------------------------------------------------------------
+retry:
+  max_retries: 3
+  backoff_base_s: 2.0
+  backoff_max_s: 30.0
+  strategies:
+    - name: "retry_same"
+      description: "Re-generate with the same prompt (stochastic retry)."
+      max_uses: 1
+      applicable_when:
+        - "l1_minor_failure"
+        - "l2_borderline"
+
+    - name: "adjust_parameters"
+      description: "Change seed, cfg_scale, or inference steps."
+      max_uses: 1
+      parameter_mutations:
+        seed: "random"
+        cfg_scale: "+0.5"
+
+    - name: "rewrite_prompt"
+      description: "Use VLM critique to rewrite the generation prompt."
+      max_uses: 1
+      requires_vlm: true
+      applicable_when:
+        - "l2_alignment_fail"
+        - "l3_fair_or_poor"
+
+# --------------------------------------------------------------------------
+# Composition settings
+# --------------------------------------------------------------------------
+composition:
+  output_format: "mp4"
+  video_codec: "libx264"
+  audio_codec: "aac"
+  crf: 23
+  preset: "medium"
+  fps: 30
+  resolution:
+    width: 1080
+    height: 1920
+
+# --------------------------------------------------------------------------
+# Output settings
+# --------------------------------------------------------------------------
+output:
+  directory: "./output"
+  filename_template: "{project}_{timestamp}_{attempt}"
+  keep_intermediates: false
+  log_level: "INFO"

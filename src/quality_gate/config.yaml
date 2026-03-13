@@ -1,0 +1,104 @@
+# ==========================================================================
+# VideoQA Gate — Default Quality Configuration
+# ==========================================================================
+#
+# This file defines thresholds, weights, and provider settings for the
+# three-layer quality gate.  Override per-project by passing --config to
+# the CLI.
+
+# --------------------------------------------------------------------------
+# Layer 1 — Programmatic (hard-gate) checks
+# --------------------------------------------------------------------------
+l1:
+  enabled: true
+  checks:
+    file_integrity:
+      enabled: true
+    resolution_duration:
+      enabled: true
+      target_width: 1080
+      target_height: 1920
+      target_duration: 60.0        # seconds — 10 % tolerance applied
+    av_sync:
+      enabled: true
+      max_drift_ms: 100.0
+    audio_loudness:
+      enabled: true
+      target_lufs: -23.0
+      tolerance: 2.0               # LU
+    subtitles:
+      enabled: true
+    frame_consistency:
+      enabled: true
+      hash_threshold: 10           # pHash Hamming distance
+
+# --------------------------------------------------------------------------
+# Layer 2 — ML-based quality scoring
+# --------------------------------------------------------------------------
+l2:
+  enabled: true
+  pass_threshold: 0.70
+  review_threshold: 0.50
+  weights:
+    visual_quality: 0.25
+    text_alignment: 0.25
+    temporal_consistency: 0.15
+    motion_smoothness: 0.15
+    scene_changes: 0.10
+    color_consistency: 0.10
+  checks:
+    visual_quality:
+      enabled: true
+      model: "DOVER"
+    text_alignment:
+      enabled: true
+      model: "openclip-ViT-B-32"
+      min_cosine: 0.25
+    temporal_consistency:
+      enabled: true
+    motion_smoothness:
+      enabled: true
+    scene_changes:
+      enabled: true
+      max_scenes: 3
+    color_consistency:
+      enabled: true
+      max_bhattacharyya: 0.35
+
+# --------------------------------------------------------------------------
+# Layer 3 — VLM review
+# --------------------------------------------------------------------------
+l3:
+  enabled: true
+  provider: "gemini"
+  model: "gemini-2.5-flash"
+  sampling:
+    n_frames: 16
+    method: "uniform"
+  labels:
+    - EXCELLENT
+    - GOOD
+    - FAIR
+    - POOR
+  scoring:
+    visual_quality: "Rate overall visual quality (1-5)."
+    text_alignment: "How well does the video match the script? (1-5)"
+    temporal_coherence: "Are transitions and motion smooth? (1-5)"
+    aesthetic_appeal: "Is the video aesthetically pleasing? (1-5)"
+    technical_quality: "Any artifacts, glitches, or encoding issues? (1-5)"
+
+# --------------------------------------------------------------------------
+# Retry / correction settings
+# --------------------------------------------------------------------------
+retry:
+  max_retries: 3
+  strategies:
+    - name: "retry_same"
+      description: "Re-generate with the same prompt (addresses stochastic failures)."
+      max_attempts: 1
+    - name: "adjust_parameters"
+      description: "Tweak generation parameters (seed, cfg_scale, steps)."
+      max_attempts: 1
+    - name: "rewrite_prompt"
+      description: "Use VLM critique to rewrite the generation prompt."
+      max_attempts: 1

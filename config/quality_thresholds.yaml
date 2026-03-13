@@ -1,0 +1,84 @@
+# ==========================================================================
+# Quality Thresholds Configuration
+# ==========================================================================
+#
+# Defines pass/fail thresholds for each metric across all quality layers.
+# These thresholds are referenced by the QualityAggregator.
+
+# --------------------------------------------------------------------------
+# Layer 1 — Programmatic checks (hard gates)
+# --------------------------------------------------------------------------
+l1:
+  file_integrity:
+    must_have_video: true
+    must_have_audio: true
+
+  resolution_duration:
+    min_width: 720
+    min_height: 1280
+    target_width: 1080
+    target_height: 1920
+    min_duration: 10.0       # seconds
+    max_duration: 180.0      # seconds
+    duration_tolerance: 0.10 # +/- 10%
+
+  av_sync:
+    max_drift_ms: 100.0
+    warning_drift_ms: 50.0
+
+  audio_loudness:
+    target_lufs: -23.0
+    tolerance_lu: 2.0
+    max_true_peak_dbtp: -1.0
+
+  subtitles:
+    max_overlap_ms: 0        # no overlapping cues
+    min_coverage: 0.80       # at least 80% of audio duration covered
+    max_chars_per_line: 25
+    min_display_time_ms: 800 # minimum subtitle display time
+
+  frame_consistency:
+    hash_threshold: 10       # pHash Hamming distance
+    max_stuck_frames: 3      # consecutive identical frames allowed
+
+# --------------------------------------------------------------------------
+# Layer 2 — ML checks (soft scores)
+# --------------------------------------------------------------------------
+l2:
+  pass_threshold: 0.70
+  review_threshold: 0.50
+
+  visual_quality:
+    min_aesthetic: 0.40
+    min_technical: 0.50
+
+  text_alignment:
+    min_cosine: 0.25
+    good_cosine: 0.35
+
+  temporal_consistency:
+    min_score: 0.60
+
+  motion_smoothness:
+    min_score: 0.55
+
+  scene_changes:
+    max_unintended_cuts: 2
+
+  color_consistency:
+    max_bhattacharyya: 0.35
+    max_std_deviation: 0.20
+
+# --------------------------------------------------------------------------
+# Layer 3 — VLM review (label-based)
+# --------------------------------------------------------------------------
+l3:
+  pass_labels:
+    - EXCELLENT
+    - GOOD
+  review_labels:
+    - FAIR
+  fail_labels:
+    - POOR
+  min_criteria_score: 3.0    # per-criterion minimum (1-5 scale)
+  min_average_score: 3.5     # average across all criteria
