@@ -8,10 +8,14 @@ subtitle format, and frame consistency.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
+
+import imagehash
+import pysrt
 
 
 # ---------------------------------------------------------------------------
@@ -113,8 +117,63 @@ class ProgrammaticChecker:
             target_height: Expected height in pixels.
             target_duration: Expected duration in seconds (allows +/- 10 %).
         """
-        # TODO: implement ffprobe-based resolution & duration extraction
-        raise NotImplementedError
+        try:
+            probe = self._ffprobe_json(video_path)
+            # Find the first video stream for resolution
+            video_stream = next(
+                (s for s in probe.get("streams", []) if s["codec_type"] == "video"),
+                None,
+            )
+            if video_stream is None:
+                return CheckResult(
+                    name="resolution_duration",
+                    passed=False,
+                    score=0.0,
+                    details={"error": "no video stream found"},
+                )
+
+            actual_width = int(video_stream.get("width", 0))
+            actual_height = int(video_stream.get("height", 0))
+
+            # Duration: prefer format-level, fall back to stream-level
+            duration_str = (
+                probe.get("format", {}).get("duration")
+                or video_stream.get("duration")
+            )
+            actual_duration = float(duration_str) if duration_str else 0.0
+
+            resolution_ok = (actual_width == target_width and actual_height == target_height)
+            duration_ok = abs(actual_duration - target_duration) <= target_duration * 0.10
+
+            if resolution_ok and duration_ok:
+                score = 1.0
+            elif resolution_ok or duration_ok:
+                score = 0.5
+            else:
+                score = 0.0
+
+            return CheckResult(
+                name="resolution_duration",
+                passed=(resolution_ok and duration_ok),
+                score=score,
+                details={
+                    "actual_width": actual_width,
+                    "actual_height": actual_height,
+                    "target_width": target_width,
+                    "target_height": target_height,
+                    "actual_duration": actual_duration,
+                    "target_duration": target_duration,
+                    "resolution_ok": resolution_ok,
+                    "duration_ok": duration_ok,
+                },
+            )
+        except Exception as exc:
+            return CheckResult(
+                name="resolution_duration",
+                passed=False,
+                score=0.0,
+                details={"error": str(exc)},
+            )
 
     def check_av_sync(
         self, video_path: str, max_drift_ms: float = 100.0
@@ -128,8 +187,54 @@ class ProgrammaticChecker:
             video_path: Path to the video file.
             max_drift_ms: Maximum allowable drift in milliseconds.
         """
-        # TODO: implement PTS diff analysis via ffprobe frame-level output
-        raise NotImplementedError
+        try:
+            probe = self._ffprobe_json(video_path)
+            streams = probe.get("streams", [])
+
+            video_stream = next(
+                (s for s in streams if s["codec_type"] == "video"), None
+            )
+            audio_stream = next(
+                (s for s in streams if s["codec_type"] == "audio"), None
+            )
+
+            if video_stream is None or audio_stream is None:
+                return CheckResult(
+                    name="av_sync",
+                    passed=False,
+                    score=0.0,
+                    details={"error": "missing video or audio stream"},
+                )
+
+            video_start = float(video_stream.get("start_time", 0.0))
+            audio_start = float(audio_stream.get("start_time", 0.0))
+            drift_ms = abs(video_start - audio_start) * 1000.0
+
+            if drift_ms < 50.0:
+                score = 1.0
+            elif drift_ms < 100.0:
+                score = 0.5
+            else:
+                score = 0.0
+
+            return CheckResult(
+                name="av_sync",
+                passed=(drift_ms < max_drift_ms),
+                score=score,
+                details={
+                    "video_start_time": video_start,
+                    "audio_start_time": audio_start,
+                    "drift_ms": round(drift_ms, 3),
+                    "max_drift_ms": max_drift_ms,
+                },
+            )
+        except Exception as exc:
+            return CheckResult(
+                name="av_sync",
+                passed=False,
+                score=0.0,
+                details={"error": str(exc)},
+            )
 
     def check_audio_loudness(
         self,
@@ -144,8 +249,75 @@ class ProgrammaticChecker:
             target_lufs: Target integrated loudness in LUFS.
             tolerance: Acceptable deviation in LU.
         """
-        # TODO: implement ffmpeg loudnorm measurement
-        raise NotImplementedError
+        try:
+            cmd = [
+                "ffmpeg",
+                "-i", video_path,
+                "-af", "loudnorm=print_format=json",
+                "-f", "null",
+                "-",
+            ]
+            proc = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=120
+            )
+            # The loudnorm filter prints a JSON block in stderr.
+            # It appears after a line like "[Parsed_loudnorm_0 @ 0x...] {"
+            stderr = proc.stderr
+
+            # Extract the JSON block from stderr
+            match = re.search(
+                r"\[Parsed_loudnorm_0\s+@\s+0x[0-9a-f]+\]\s*(\{.*?\})",
+                stderr,
+                re.DOTALL,
+            )
+            if match is None:
+                # Fallback: try to find a bare JSON block with "input_i"
+                match = re.search(
+                    r'(\{[^{}]*"input_i"[^{}]*\})',
+                    stderr,
+                    re.DOTALL,
+                )
+            if match is None:
+                return CheckResult(
+                    name="audio_loudness",
+                    passed=False,
+                    score=0.0,
+                    details={"error": "could not parse loudnorm output from ffmpeg"},
+                )
+
+            loudnorm_data = json.loads(match.group(1))
+            measured_lufs = float(loudnorm_data["input_i"])
+
+            deviation = abs(measured_lufs - target_lufs)
+            passed = deviation <= tolerance
+
+            # Score: 1.0 if within tolerance, linearly drops to 0.0 at 2x tolerance
+            if deviation <= tolerance:
+                score = 1.0
+            elif deviation <= tolerance * 2:
+                score = 1.0 - (deviation - tolerance) / tolerance
+            else:
+                score = 0.0
+
+            return CheckResult(
+                name="audio_loudness",
+                passed=passed,
+                score=round(max(score, 0.0), 4),
+                details={
+                    "measured_lufs": measured_lufs,
+                    "target_lufs": target_lufs,
+                    "tolerance": tolerance,
+                    "deviation": round(deviation, 2),
+                    "loudnorm_raw": loudnorm_data,
+                },
+            )
+        except Exception as exc:
+            return CheckResult(
+                name="audio_loudness",
+                passed=False,
+                score=0.0,
+                details={"error": str(exc)},
+            )
 
     def check_subtitles(
         self, srt_path: str, audio_duration: float
@@ -160,8 +332,97 @@ class ProgrammaticChecker:
             CheckResult with details about parsing errors, overlaps,
             and coverage ratio.
         """
-        # TODO: implement SRT parsing and validation
-        raise NotImplementedError
+        try:
+            subs = pysrt.open(srt_path)
+        except Exception as exc:
+            return CheckResult(
+                name="subtitles",
+                passed=False,
+                score=0.0,
+                details={"parse_error": str(exc)},
+            )
+
+        try:
+            parse_errors: list[str] = []
+            if len(subs) == 0:
+                parse_errors.append("SRT file contains no subtitle entries")
+
+            # Check for overlapping timestamps
+            overlaps: list[dict[str, Any]] = []
+            for i in range(len(subs) - 1):
+                current_end = (
+                    subs[i].end.hours * 3600
+                    + subs[i].end.minutes * 60
+                    + subs[i].end.seconds
+                    + subs[i].end.milliseconds / 1000.0
+                )
+                next_start = (
+                    subs[i + 1].start.hours * 3600
+                    + subs[i + 1].start.minutes * 60
+                    + subs[i + 1].start.seconds
+                    + subs[i + 1].start.milliseconds / 1000.0
+                )
+                if current_end > next_start:
+                    overlaps.append({
+                        "index": i,
+                        "current_end": round(current_end, 3),
+                        "next_start": round(next_start, 3),
+                    })
+
+            # Calculate coverage ratio
+            total_sub_duration = 0.0
+            for sub in subs:
+                start_sec = (
+                    sub.start.hours * 3600
+                    + sub.start.minutes * 60
+                    + sub.start.seconds
+                    + sub.start.milliseconds / 1000.0
+                )
+                end_sec = (
+                    sub.end.hours * 3600
+                    + sub.end.minutes * 60
+                    + sub.end.seconds
+                    + sub.end.milliseconds / 1000.0
+                )
+                total_sub_duration += max(0.0, end_sec - start_sec)
+
+            coverage = total_sub_duration / audio_duration if audio_duration > 0 else 0.0
+
+            no_parse_errors = len(parse_errors) == 0
+            no_overlaps = len(overlaps) == 0
+            coverage_ok = coverage >= 0.5
+
+            passed = no_parse_errors and no_overlaps and coverage_ok
+
+            # Score: weight parse/overlap as binary, coverage as continuous
+            score_parts = []
+            score_parts.append(1.0 if no_parse_errors else 0.0)
+            score_parts.append(1.0 if no_overlaps else 0.0)
+            score_parts.append(min(coverage / 0.5, 1.0) if coverage >= 0 else 0.0)
+            score = sum(score_parts) / len(score_parts)
+
+            return CheckResult(
+                name="subtitles",
+                passed=passed,
+                score=round(score, 4),
+                details={
+                    "subtitle_count": len(subs),
+                    "parse_errors": parse_errors,
+                    "overlap_count": len(overlaps),
+                    "overlaps": overlaps[:10],  # limit detail size
+                    "total_sub_duration": round(total_sub_duration, 3),
+                    "audio_duration": audio_duration,
+                    "coverage": round(coverage, 4),
+                    "coverage_ok": coverage_ok,
+                },
+            )
+        except Exception as exc:
+            return CheckResult(
+                name="subtitles",
+                passed=False,
+                score=0.0,
+                details={"error": str(exc)},
+            )
 
     def check_frame_consistency(
         self, video_path: str, hash_threshold: int = 10
@@ -177,8 +438,120 @@ class ProgrammaticChecker:
             hash_threshold: Hamming-distance threshold below which two
                 consecutive frames are considered identical.
         """
-        # TODO: implement imagehash-based frame consistency check
-        raise NotImplementedError
+        try:
+            import cv2
+        except ImportError:
+            return CheckResult(
+                name="frame_consistency",
+                passed=False,
+                score=0.0,
+                details={"error": "cv2 (opencv-python) is not installed"},
+            )
+
+        try:
+            from PIL import Image
+
+            cap = cv2.VideoCapture(video_path)
+            if not cap.isOpened():
+                return CheckResult(
+                    name="frame_consistency",
+                    passed=False,
+                    score=0.0,
+                    details={"error": "could not open video file"},
+                )
+
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if total_frames <= 0 or fps <= 0:
+                cap.release()
+                return CheckResult(
+                    name="frame_consistency",
+                    passed=False,
+                    score=0.0,
+                    details={"error": "could not determine frame count or fps"},
+                )
+
+            # Sample every Nth frame (~1 fps)
+            sample_interval = max(int(fps), 1)  # roughly 1 sample per second
+            hashes: list[imagehash.ImageHash] = []
+            frame_indices: list[int] = []
+
+            for frame_idx in range(0, total_frames, sample_interval):
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                # Convert BGR (OpenCV) to RGB (PIL)
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                pil_img = Image.fromarray(rgb)
+                h = imagehash.phash(pil_img)
+                hashes.append(h)
+                frame_indices.append(frame_idx)
+
+            cap.release()
+
+            if len(hashes) < 2:
+                return CheckResult(
+                    name="frame_consistency",
+                    passed=True,
+                    score=1.0,
+                    details={
+                        "sampled_frames": len(hashes),
+                        "note": "too few frames to analyze",
+                    },
+                )
+
+            # Compute Hamming distances between consecutive sampled frames
+            distances: list[int] = []
+            frozen_pairs: list[dict[str, Any]] = []
+            glitch_pairs: list[dict[str, Any]] = []
+            glitch_threshold = 40  # very high distance = visual glitch
+
+            for i in range(len(hashes) - 1):
+                dist = hashes[i] - hashes[i + 1]
+                distances.append(dist)
+                if dist < hash_threshold:
+                    frozen_pairs.append({
+                        "frame_a": frame_indices[i],
+                        "frame_b": frame_indices[i + 1],
+                        "distance": dist,
+                    })
+                if dist > glitch_threshold:
+                    glitch_pairs.append({
+                        "frame_a": frame_indices[i],
+                        "frame_b": frame_indices[i + 1],
+                        "distance": dist,
+                    })
+
+            total_transitions = len(distances)
+            normal_transitions = total_transitions - len(frozen_pairs) - len(glitch_pairs)
+            score = normal_transitions / total_transitions if total_transitions > 0 else 1.0
+
+            # Passed if the majority of transitions are normal
+            passed = score >= 0.5
+
+            return CheckResult(
+                name="frame_consistency",
+                passed=passed,
+                score=round(score, 4),
+                details={
+                    "sampled_frames": len(hashes),
+                    "total_transitions": total_transitions,
+                    "frozen_count": len(frozen_pairs),
+                    "glitch_count": len(glitch_pairs),
+                    "normal_count": normal_transitions,
+                    "frozen_pairs": frozen_pairs[:10],  # limit detail size
+                    "glitch_pairs": glitch_pairs[:10],
+                    "hash_threshold": hash_threshold,
+                },
+            )
+        except Exception as exc:
+            return CheckResult(
+                name="frame_consistency",
+                passed=False,
+                score=0.0,
+                details={"error": str(exc)},
+            )
 
     # -- aggregate -----------------------------------------------------------
 
@@ -219,6 +592,26 @@ class ProgrammaticChecker:
                 hash_threshold=kwargs.get("hash_threshold", 10),
             )),
         ]
+
+        # Subtitles check requires a separate srt_path; skip if not provided
+        srt_path = kwargs.get("srt_path")
+        if srt_path:
+            # We need audio duration for subtitle coverage check;
+            # attempt to extract it from ffprobe
+            try:
+                probe = self._ffprobe_json(video_path)
+                audio_duration = float(
+                    probe.get("format", {}).get("duration", 0.0)
+                )
+            except Exception:
+                audio_duration = 0.0
+
+            optional_methods.append(
+                ("subtitles", lambda: self.check_subtitles(
+                    srt_path,
+                    audio_duration=kwargs.get("audio_duration", audio_duration),
+                ))
+            )
 
         for name, fn in optional_methods:
             try:
