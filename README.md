@@ -166,6 +166,19 @@ videoqa-gate/
 | [VMAF](https://github.com/Netflix/vmaf) | Netflix | 2016+ | Perceptual video quality metric trained on human judgments; industry standard for streaming QA |
 | [CLIPScore](https://arxiv.org/abs/2104.08718) | CMU | 2021 | Reference-free image-text alignment metric based on CLIP embeddings |
 | [T2VQA-DB](https://arxiv.org/abs/2407.17003) | Multiple | 2024 | Large-scale text-to-video quality assessment database and benchmark |
+| [VGBE @ CVPR 2026](https://vgbe-workshop.github.io/) | CVPR | 2026 | 1st Workshop on Video Generative Models: Benchmarks and Evaluation |
+| [Q-Bench-Video](https://arxiv.org/abs/2404.xxxx) | Multiple | 2025 | LMM video quality judgment proficiency benchmark (CVPR 2025) |
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [01 - Open-Source Landscape](docs/01-open-source-landscape.md) | Comprehensive comparison of open-source video generation projects by tier |
+| [02 - Evaluation Tools](docs/02-evaluation-tools.md) | Survey of VBench, DOVER, OpenCLIP, LGVQ/UGVQ, Q-Bench-Video, and more |
+| [03 - Self-Correction Patterns](docs/03-self-correction-patterns.md) | VISTA, Evaluator-Optimizer, Netflix VMAF, LangGraph patterns |
+| [04 - Commercial Landscape](docs/04-commercial-landscape.md) | Runway, Synthesia, Kling 3.0, Jimeng, and market segmentation |
+| [05 - Gap Analysis](docs/05-gap-analysis.md) | Five major gaps, failure modes, opportunity sizing |
+| [06 - Architecture Proposal](docs/06-architecture-proposal.md) | Three-layer quality gate design, LangGraph correction loop, LangSmith observability |
 
 ## Contributing
 

@@ -350,6 +350,71 @@ print(f"Frame quality (MUSIQ): {score.item():.4f}")
 
 ---
 
+## Emerging Benchmarks (2025-2026)
+
+The evaluation landscape is evolving rapidly. These newer benchmarks and datasets address gaps in existing tools and are worth tracking for integration.
+
+### LGVQ / UGVQ -- Large-Scale Generated Video Quality
+
+**What it is:** LGVQ is a dataset of 2,808 AIGC videos with human-annotated perceptual quality ratings. UGVQ is a unified model trained on LGVQ that assesses spatial quality, temporal quality, and text-video alignment in a single pass.
+
+**Why it matters:** Previous tools evaluated dimensions separately. UGVQ integrates visual, motion, and textual features into one model, which is closer to what our Layer 2 aggregator does manually.
+
+**Status:** Research paper published. Model weights available on HuggingFace.
+
+**Reference:** [LGVQ arXiv](https://arxiv.org/abs/2401.14554)
+
+---
+
+### Q-Bench-Video -- LMM Video Quality Proficiency
+
+**What it is:** A benchmark that tests how well Large Multimodal Models (LMMs) can judge video quality. Accepted at CVPR 2025.
+
+**Why it matters:** Directly relevant to our Layer 3 VLM review design. Q-Bench-Video provides calibrated test data for measuring whether a VLM judge (Gemini, GPT-4o, etc.) can reliably distinguish quality levels, including AIGC-specific distortions.
+
+**Application for this project:** Use Q-Bench-Video samples as anchor calibration data for Layer 3 VLM prompts.
+
+---
+
+### AIGCBench -- Image-to-Video Evaluation
+
+**What it is:** A benchmark for evaluating image-to-video generation, covering control-video alignment, motion effects, temporal consistency, and overall quality.
+
+**Why it matters:** As AI video APIs (Kling, Runway) often support image-to-video, this benchmark provides evaluation criteria specific to that workflow.
+
+---
+
+### CVPR 2026 VGBE Workshop
+
+The **1st Workshop on Video Generative Models: Benchmarks and Evaluation (VGBE)** will be held at CVPR 2026 (June 3-7, Denver). Topics directly relevant to this project:
+
+- **Explainable automated judges** leveraging Multimodal LLMs
+- **Narrative and multi-shot evaluation suites**
+- **Physics-grounded challenge sets**
+- **Human preference alignment protocols**
+- Challenges: Generic Instructional Video Editing + Image-to-Video Consistent Generation
+
+**Action item:** Monitor VGBE 2026 papers (post-June) for next-generation evaluation methods that could be integrated into Layer 2/3.
+
+**Reference:** [VGBE Workshop](https://vgbe-workshop.github.io/)
+
+---
+
+### Grok Imagine "Extend from Frame" -- Quality Degradation Case Study
+
+xAI's Grok Imagine (launched Feb 2026) introduced "Extend from Frame" video chaining: the final frame of one clip becomes the starting frame of the next, enabling 30s+ AI video sequences. Community testing revealed a critical finding:
+
+**Quality degrades after multiple chained extensions.** Users developed "Master Consistency Lock" prompt techniques to mitigate drift in motion, character appearance, and lighting.
+
+**Relevance to this project:**
+- Validates the need for our **L2 frame consistency checks** (imagehash pHash between chain boundaries)
+- The quality degradation pattern is exactly what our **L3 VLM coherence review** should catch
+- "Extend from Frame" workflows are a prime use case for the quality gate -- evaluate each extension before accepting it
+
+**Reference:** [Grok Imagine Updates](https://basenor.com)
+
+---
+
 ## Comparison Table
 
 | Tool | Install | What It Measures | Output Format | Speed (per video) | Cost | Best For |
@@ -364,6 +429,9 @@ print(f"Frame quality (MUSIQ): {score.item():.4f}")
 | **pyiqa** | pip | Frame-level image quality (30+ metrics) | Float per frame | 50-200ms/frame | Free | Frame quality screening |
 | **VF-EVAL** | research | Coherence, errors, reasoning (via VLM) | Structured JSON + text | 5-30s (API) | VLM API cost | Semantic quality assessment |
 | **EvalCrafter** | source | 17 metrics on AIGC video | Benchmark scores | Variable | Free | Model benchmarking |
+| **UGVQ** | HuggingFace | Spatial + temporal + text alignment (unified) | Multi-dim scores | TBD | Free | Unified AIGC quality |
+| **Q-Bench-Video** | research | LMM quality judgment proficiency | Calibration data | N/A | Free | VLM judge calibration |
+| **AIGCBench** | research | I2V control alignment + temporal consistency | Benchmark scores | Variable | Free | Image-to-video eval |
 
 ---
 

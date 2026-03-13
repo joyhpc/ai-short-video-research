@@ -820,6 +820,71 @@ output:
 
 ---
 
+## Observability: LangSmith Integration
+
+The correction loop built on LangGraph can leverage **LangSmith** for production observability, debugging, and continuous improvement.
+
+### Why LangSmith
+
+LangSmith provides **LangGraph-native tracing** with step-level (node/edge) scoring. This is critical for:
+
+1. **Debugging retry loops:** See exactly which quality gate layer failed, what score triggered the retry, and how the corrected prompt differs from the original
+2. **Performance monitoring:** Track L1/L2/L3 latencies, pass rates, and retry frequencies over time
+3. **Evaluation annotation:** Human annotators can score pipeline outputs through LangSmith's annotation queues, building a ground-truth dataset for calibrating thresholds
+4. **Regression detection:** Automated evaluation runs can flag when VLM quality judgments drift (e.g., Gemini model update changes scoring behavior)
+
+### Integration Architecture
+
+```
+LangGraph Pipeline
+    │
+    ├── generate_shots ──trace──▶ LangSmith
+    │       └── [provider, prompt, latency, cost]
+    │
+    ├── quality_gate ──trace──▶ LangSmith
+    │       ├── L1 results [check_name → pass/fail]
+    │       ├── L2 results [dimension_scores, aggregate]
+    │       └── L3 results [VLM response, label, critique]
+    │
+    ├── correction_retry ──trace──▶ LangSmith
+    │       └── [original_prompt, corrected_prompt, diff]
+    │
+    └── output ──trace──▶ LangSmith
+            └── [final_scores, retry_count, warnings]
+```
+
+### Key Metrics to Track
+
+| Metric | Source | Alert Threshold |
+|--------|--------|----------------|
+| L1 pass rate | quality_gate node | < 90% (infrastructure problem) |
+| L2 mean score | quality_gate node | < 0.60 (generation quality drop) |
+| L3 invocation rate | quality_gate node | > 40% (L2 threshold may need tuning) |
+| Retry rate | conditional edge | > 50% (generator or prompt issue) |
+| Mean retries per video | output node | > 2.0 (cost concern) |
+| VLM judge consistency | L3 annotations | Cohen's kappa < 0.6 vs human |
+
+### Setup
+
+```python
+# Add to orchestrator.py
+import os
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "..."
+os.environ["LANGCHAIN_PROJECT"] = "videoqa-gate"
+
+# LangGraph pipeline automatically sends traces to LangSmith
+# when LANGCHAIN_TRACING_V2 is set
+pipeline = graph.compile()
+result = pipeline.invoke(initial_state)
+```
+
+### Alternative: Self-Hosted Observability
+
+For users who prefer not to use LangSmith, the pipeline outputs a **JSON sidecar** alongside each video containing the full quality report. This can be ingested into any observability stack (Grafana, ELK, etc.).
+
+---
+
 ## Validation Plan
 
 ### Unit Tests
