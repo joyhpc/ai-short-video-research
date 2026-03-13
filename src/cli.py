@@ -69,9 +69,12 @@ def cmd_generate(args: argparse.Namespace) -> int:
     video_clips = []
     video_provider = args.video_provider
     n_candidates = getattr(args, 'candidates', 1)
+    max_retries = getattr(args, 'retries', 0)
+    quality_threshold = 0.6
 
     if video_provider and video_provider != "placeholder":
         from src.pipeline.generators.ai_video import AIVideoGenerator
+        from src.quality_gate.clip_scorer import score_clip, pick_best
         ai_gen = AIVideoGenerator(
             default_provider=video_provider,
             api_keys={"veo": os.environ.get("GEMINI_API_KEY", "")},
@@ -81,17 +84,17 @@ def cmd_generate(args: argparse.Namespace) -> int:
 
         for i, scene in enumerate(script.scenes):
             print(f"    [{i+1}/{len(script.scenes)}] {scene.visual_description[:50]}...")
+            current_prompt = scene.visual_description
 
+            # --- Route B: generate N candidates, pick best ---
             candidates = []
             for c in range(n_candidates):
-                tag = f"s{i:02d}_c{c}" if n_candidates > 1 else f"s{i:02d}"
                 try:
                     clip = ai_gen.generate(
-                        prompt=scene.visual_description,
+                        prompt=current_prompt,
                         provider=video_provider,
                         duration=scene.duration_hint,
-                        width=1080,
-                        height=1920,
+                        width=1080, height=1920,
                     )
                     candidates.append(clip.local_path)
                 except Exception as e:
@@ -102,15 +105,53 @@ def cmd_generate(args: argparse.Namespace) -> int:
                 clip_path = str(output_dir / f"clip_{i:03d}.mp4")
                 _generate_placeholder_clip(clip_path, scene.visual_description, scene.duration_hint)
                 video_clips.append(clip_path)
-            elif len(candidates) == 1:
-                video_clips.append(candidates[0])
-                print(f"    -> {candidates[0]}")
+                continue
+
+            if len(candidates) == 1:
+                best_path = candidates[0]
+                best_sc = score_clip(best_path, prompt=current_prompt)
             else:
-                # Score and pick best
-                from src.quality_gate.clip_scorer import pick_best
-                best_path, best_score = pick_best(candidates, prompt=scene.visual_description)
-                video_clips.append(best_path)
-                print(f"    -> Best of {len(candidates)}: {os.path.basename(best_path)} (score={best_score.score:.2f})")
+                best_path, best_sc = pick_best(candidates, prompt=current_prompt)
+
+            print(f"    -> {os.path.basename(best_path)} (score={best_sc.score:.2f})")
+
+            # --- Route A: if below threshold, diagnose + rewrite + retry ---
+            retry = 0
+            while best_sc.score < quality_threshold and retry < max_retries:
+                retry += 1
+                print(f"    [retry {retry}/{max_retries}] Score {best_sc.score:.2f} < {quality_threshold}, correcting...")
+
+                # Diagnose and rewrite prompt
+                new_prompt = _correct_prompt(current_prompt, best_sc)
+                if new_prompt == current_prompt:
+                    print(f"    [retry {retry}] No prompt change, stopping")
+                    break
+                current_prompt = new_prompt
+                print(f"    [retry {retry}] New prompt: {current_prompt[:60]}...")
+
+                # Regenerate with corrected prompt
+                try:
+                    clip = ai_gen.generate(
+                        prompt=current_prompt,
+                        provider=video_provider,
+                        duration=scene.duration_hint,
+                        width=1080, height=1920,
+                    )
+                    new_sc = score_clip(clip.local_path, prompt=current_prompt)
+                    print(f"    [retry {retry}] {os.path.basename(clip.local_path)} (score={new_sc.score:.2f})")
+
+                    # Keep the better one
+                    if new_sc.score > best_sc.score:
+                        best_path = clip.local_path
+                        best_sc = new_sc
+                        print(f"    [retry {retry}] Improved! {best_sc.score:.2f}")
+                    else:
+                        print(f"    [retry {retry}] No improvement, keeping previous")
+                except Exception as e:
+                    print(f"    [retry {retry}] Generation failed: {e}")
+                    break
+
+            video_clips.append(best_path)
     else:
         for i, scene in enumerate(script.scenes):
             clip_path = str(output_dir / f"clip_{i:03d}.mp4")
@@ -242,6 +283,47 @@ def cmd_script(args: argparse.Namespace) -> int:
     return 0
 
 
+def _correct_prompt(original_prompt: str, clip_score) -> str:
+    """Analyze clip score and rewrite prompt to fix quality issues.
+
+    Simple, practical approach: look at which checks scored low,
+    add targeted modifiers to the prompt.
+    """
+    additions = []
+    details = clip_score.details
+
+    # Check L1 issues
+    l1 = details.get("l1", {})
+    if l1.get("score", 1.0) < 0.6:
+        additions.append("high quality, well-encoded, stable framerate")
+
+    # Check L2 issues
+    l2 = details.get("l2", {})
+    checks = l2.get("checks", {})
+
+    if checks.get("temporal_consistency", 1.0) < 0.7:
+        additions.append("smooth continuous motion, no flickering or jumping")
+
+    if checks.get("motion_smoothness", 1.0) < 0.7:
+        additions.append("steady camera, fluid movement, no jitter")
+
+    if checks.get("color_consistency", 1.0) < 0.7:
+        additions.append("consistent color grading throughout, uniform lighting")
+
+    if checks.get("scene_changes", 1.0) < 0.7:
+        additions.append("single continuous scene, no abrupt cuts")
+
+    if checks.get("visual_quality", 1.0) < 0.5:
+        additions.append("sharp focus, high resolution, professional quality")
+
+    if not additions:
+        # Generic improvement if no specific issue found
+        additions.append("cinematic quality, 4K, professional lighting")
+
+    corrected = original_prompt + ". " + ", ".join(additions)
+    return corrected
+
+
 def _generate_placeholder_clip(output_path: str, text: str, duration: float) -> None:
     """Generate a simple placeholder video clip with text overlay using FFmpeg."""
     import subprocess
@@ -305,6 +387,7 @@ def build_parser() -> argparse.ArgumentParser:
     gen_parser.add_argument("--bgm-library", default=None, help="Path to BGM library directory")
     gen_parser.add_argument("--video-provider", default="placeholder", choices=["veo", "seedance", "kling", "runway", "placeholder"], help="Video generation provider")
     gen_parser.add_argument("--candidates", type=int, default=1, help="Generate N candidates per scene, pick best (Route B)")
+    gen_parser.add_argument("--retries", type=int, default=0, help="Max correction retries per scene (Route A)")
     gen_parser.add_argument("--skip-eval", action="store_true", help="Skip quality evaluation")
     gen_parser.set_defaults(func=cmd_generate)
 
