@@ -402,6 +402,182 @@ AI 生成型（Veo/Runway/Kling）:
 
 ---
 
+## 9. 2026 年 2 月大爆发 — 行业转折点
+
+2026 年 2 月第一周，三大模型同时发布，行业格局剧变：
+
+### 9.1 时间线
+
+```
+2026.01.07  Sora 限制免费使用，标准账户无法网页端生成
+2026.01.10  Sora 免费层完全停止
+2026.01.xx  Veo 3.1 扩大 Gemini API 访问
+2026.02.04  Sora 增加"照片转视频"功能
+2026.02.05  ★ Kling 3.0 发布 — 首个原生 4K/60fps AI 视频模型
+2026.02.07  ★ Seedance 2.0 发布 — 原生音频 + 12 文件多模态输入
+2026.02.09  Sora 增加"视频延展"功能
+2026.02.12  Seedance 2.0 版权争议爆发（迪士尼、派拉蒙、MPA）
+2026.02.24  Seedance 2.0 全球 API 推迟发布
+2026.03.04  Seedance 2.0 API 通过火山引擎正式上线
+2026.03.xx  NVIDIA GDC 发布 ComfyUI App View + LTX-2.3 优化
+```
+
+### 9.2 Seedance 2.0（字节跳动）
+
+**改变了什么：**
+
+| 能力 | 详情 |
+|------|------|
+| 原生音频 | 同步生成对话、环境音、音效、音乐——几乎消除后期音频工作 |
+| 多模态输入 | 支持最多 **12 个参考文件**（图片/视频/音频），引导角色一致性、风格、运动 |
+| 导演级镜头 | 自主管理推拉摇移，单 prompt 生成多镜头叙事序列 |
+| 分辨率/时长 | 最高 2K，最长 15 秒，自然多镜头转场 |
+| 多语言唇形同步 | 英语/中文/西班牙语精确唇形对齐 |
+
+**API 定价（2026.03）：**
+
+| 渠道 | 价格 |
+|------|------|
+| 官方（火山引擎） | ~$0.10/min (720p) 至 ~$0.80/min (2K Cinema) |
+| 官方（中国） | ~1 元/秒 |
+| 第三方（laozhang.ai） | **$0.05/请求**（5s 720p）|
+| 第三方（ModelsLab） | $0.05-$0.15/视频 |
+| 第三方（Atlas Cloud） | $0.022/秒（v1.5 Pro）|
+
+**版权争议：** Seedance 2.0 生成了含好莱坞演员和受版权保护角色的病毒视频，引发迪士尼停止函、派拉蒙指控和 MPA 谴责。全球 API 发布推迟。截至 2026.03，主要通过国内应用（即梦、星火、豆包、小云雀）和第三方平台访问。
+
+**与竞品对比：**
+
+| 维度 | Seedance 2.0 | Veo 3.1 | Kling 3.0 | Runway Gen-4.5 |
+|------|-------------|---------|-----------|----------------|
+| 分辨率 | 2K | 4K | **4K/60fps** | 4K |
+| 原生音频 | ✅ 双声道 | ✅ | ✅ | ❌ |
+| 多模态输入 | **12 个参考文件** | 文本/图像 | 文本/图像/参考 | 文本/图像/视频 |
+| 多镜头叙事 | ✅ 单 prompt | 有限 | ✅ 15s 多镜头 | 关键帧控制 |
+| 核心优势 | 创意控制、叙事 | 真实感、电影感 | 分辨率/帧率、免费层 | 视觉保真度、编辑集成 |
+| Elo 排名 | 顶级 | Top 2 | Top 3 | ~1247 (Top 3) |
+
+### 9.3 Kling 3.0 更新
+
+- **首个原生 4K/60fps** AI 视频模型
+- 多镜头故事板：单 prompt 生成最长 15 秒多镜头视频
+- 原生音频 + 跨语言支持
+- "Kling Canvas Agent"：故事板 + 多轮对话编辑
+- 元素绑定 + 参考驱动生成（角色一致性）
+- Fast/Quality 双模式，.mov 导出
+
+### 9.4 其他重要更新
+
+**Runway Gen-4.5：**
+- 角色、服装、环境跨帧一致性改进
+- 液体流动、发丝、织物纹理更真实
+- 即将推出：Image-to-Video、Video-to-Video、关键帧控制
+- 集成 Adobe Firefly 和 Envato VideoGen
+
+**Sora 2 更新：**
+- 视频延展功能（2026.02.09）
+- 照片转视频（2026.02.04）
+- Character Cameos 功能（10 亿美元迪士尼合作）
+- 标准账户 Web 端生成被限制（2026.01.07）
+
+**Pika 2.5：**
+- Pikaffects 物理效果（粉碎/融化、膨胀/爆破）
+- 时间线 + 图层编辑器
+- 集成音效 + 升级版唇形同步
+
+### 9.5 行业趋势变化
+
+```
+2025 年的常态:                      2026.02 之后的新常态:
+─────────────────                  ─────────────────
+单一片段生成                        → 多镜头叙事生成
+视频和音频分离                      → 原生音视频一体生成
+1080p 为主流                       → 4K/60fps 成为标杆
+文本/图像输入                       → 多模态输入（12+ 参考文件）
+单次重试改 prompt                   → 故事板 + 对话式迭代编辑
+英语为主的 prompt                   → 多语言原生支持 + 唇形同步
+```
+
+---
+
+## 10. 主流工具链完整索引
+
+### 10.1 AI 视频生成（商业闭源）
+
+| 工具 | URL | 核心能力 | 定价 | API |
+|------|-----|---------|------|-----|
+| **Runway** | [runwayml.com](https://runwayml.com) | Gen-4/4.5 文本/图像/视频生成 | Free 125 credits; Standard $12/mo; Pro $28/mo | ✅ $0.05/s (Turbo) |
+| **Pika** | [pika.art](https://pika.art) | 短视频+物理效果+唇形同步 | Free 80 credits; Std $8/mo; Pro $28/mo | ✅ via fal.ai ~$0.20/5s |
+| **Sora** | [sora.com](https://sora.com) | 长视频(25s)+故事板+延展 | Plus $20/mo; Pro $200/mo | ✅ $0.10-0.30/s |
+| **Veo 3.1** | [aistudio.google.com](https://aistudio.google.com) | 4K+原生音频+竖版视频 | Advanced $19.99/mo; Ultra $249.99/mo | ✅ $0.15/s (Fast) |
+| **Kling 3.0** | [klingai.com](https://klingai.com) | 4K/60fps+多镜头+原生音频 | Free 66 daily; Std $6.99/mo; Pro $25.99/mo | ✅ Enterprise |
+| **Seedance 2.0** | [dreamina.capcut.com](https://dreamina.capcut.com) | 2K+12文件多模态+多镜头叙事 | Free 225 daily; Basic $18/mo; Std $42/mo | ✅ ~$0.10/min via 火山引擎 |
+| **Hailuo** | [hailuoai.video](https://hailuoai.video) | 性价比视频生成 | Std $9.99/mo; Pro $34.99/mo | ✅ $0.19-0.56/video |
+| **Luma** | [lumalabs.ai](https://lumalabs.ai) | Ray 2 模型，3D/VFX 专长 | Free 30 gens; Lite $9.99/mo | ⚠️ 有限 |
+| **Adobe Firefly** | [firefly.adobe.com](https://firefly.adobe.com) | 商业安全视频生成，Premiere 集成 | Creative Cloud 订阅 | ✅ Firefly Services |
+| **LTX Studio** | [ltx.studio](https://ltx.studio) | 全片生成+故事板+角色控制 | Free 800 credits; Lite $15/mo | ✅ LTX API |
+
+### 10.2 中国市场工具
+
+| 工具 | URL | 核心能力 | 定价 |
+|------|-----|---------|------|
+| **即梦 Dreamina** | [jimeng.jianying.com](https://jimeng.jianying.com) | 字节跳动视频生成平台(Seedance) | Basic 69 元/月; Adv 499 元/月 |
+| **可灵 Kling** | [klingai.com](https://klingai.com) | 快手 4K/60fps 视频生成 | 免费 + 付费计划 |
+| **海螺 Hailuo** | [hailuoai.video](https://hailuoai.video) | MiniMax 视频生成 | ~$9.99/月起 |
+| **剪映 Jianying** | [jianying.com](https://jianying.com) | 字节跳动视频编辑器，集成即梦 AI | 免费 + Pro |
+| **豆包 Doubao** | [doubao.com](https://doubao.com) | 字节跳动 AI 助手，内置 Seedance | 免费 |
+
+**中国市场格局：即梦（字节）vs 可灵（快手）双寡头，海螺（MiniMax）为强势第三。**
+
+### 10.3 视频编辑/后期
+
+| 工具 | URL | 核心能力 | 定价 |
+|------|-----|---------|------|
+| **CapCut** | [capcut.com](https://capcut.com) | AI 字幕/抠像/视频制作 | Free; Std $5.99/mo; Pro $19.99/mo |
+| **Descript** | [descript.com](https://descript.com) | 编辑转录=编辑视频 | Free; Creator $15/mo; Pro $30/mo |
+| **OpusClip** | [opus.pro](https://opus.pro) | 长视频→病毒短片提取 | Free 60 credits; Starter $15/mo |
+| **Pictory** | [pictory.ai](https://pictory.ai) | 博客/长内容→短视频 | Starter $19/mo |
+| **VEED** | [veed.io](https://veed.io) | 浏览器视频编辑+字幕+AI | Free tier; ~$18/mo |
+
+### 10.4 AI 头像/数字人
+
+| 工具 | URL | 核心能力 | 定价 |
+|------|-----|---------|------|
+| **HeyGen** | [heygen.com](https://heygen.com) | AI 头像+声音克隆+175语言翻译 | Free 1 credit; Creator $29/mo |
+| **Synthesia** | [synthesia.io](https://synthesia.io) | 企业级 AI 头像+160头像+140语言 | 企业定价 |
+| **D-ID** | [d-id.com](https://d-id.com) | 单张照片→数字人 | 订阅制 |
+
+### 10.5 AI 配音
+
+| 工具 | URL | 核心能力 | 定价 |
+|------|-----|---------|------|
+| **ElevenLabs** | [elevenlabs.io](https://elevenlabs.io) | 语音生成+克隆+配音+音效 | Free 10K 字符; Starter $5/mo; Pro $99/mo |
+| **edge-tts** | [github.com/rany2/edge-tts](https://github.com/rany2/edge-tts) | 免费微软 TTS | 免费 |
+
+### 10.6 开源项目
+
+| 项目 | GitHub | 核心能力 | 许可证 |
+|------|--------|---------|--------|
+| **MoneyPrinterTurbo** | [github.com/harry0703/MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) | 一键短视频（Pexels 素材） | MIT |
+| **NarratoAI** | [github.com/linyqh/NarratoAI](https://github.com/linyqh/NarratoAI) | 视频解说（VLM 场景分析） | — |
+| **ShortGPT** | [github.com/RayVentura/ShortGPT](https://github.com/RayVentura/ShortGPT) | LLM 编辑标记语言 | — |
+| **ComfyUI** | [github.com/comfyanonymous/ComfyUI](https://github.com/comfyanonymous/ComfyUI) | 节点式 AI 工作流 | GPL-3.0 |
+| **Wan 2.2** | [github.com/Wan-Video/Wan2.2](https://github.com/Wan-Video/Wan2.2) | VBench #1 开源视频模型 | Open |
+| **LTX-2** | [github.com/Lightricks/LTX-2](https://github.com/Lightricks/LTX-2) | 4K/50fps+音频，消费级 GPU | Apache 2.0 |
+| **CogVideoX** | [github.com/zai-org/CogVideo](https://github.com/zai-org/CogVideo) | 智谱文生视频 | Apache 2.0 |
+| **Mochi 1** | [github.com/genmoai/mochi](https://github.com/genmoai/mochi) | 10B 参数，强 prompt 遵循 | Apache 2.0 |
+| **HunyuanVideo** | [github.com/Tencent/HunyuanVideo](https://github.com/Tencent/HunyuanVideo) | 腾讯 13B 视频基础模型 | Open |
+| **Short Video Maker** | [github.com/gyoridavid/short-video-maker](https://github.com/gyoridavid/short-video-maker) | Node.js+MCP 短视频服务 | — |
+
+### 10.7 素材库
+
+| 平台 | URL | 内容 | 定价 |
+|------|-----|------|------|
+| **Pexels** | [pexels.com](https://www.pexels.com) | 免版税视频+图片 | 完全免费，200 req/hr |
+| **Pixabay** | [pixabay.com](https://pixabay.com) | 免版税视频+图片+音乐 | 完全免费 |
+
+---
+
 ## 附录 A：数据来源
 
 | 来源 | 用途 |
@@ -415,8 +591,12 @@ AI 生成型（Veo/Runway/Kling）:
 | [Pika Labs](https://pika.art) | 商业平台工作流 |
 | [Google Veo / DeepMind](https://deepmind.google) | 商业平台工作流 |
 | [Kling AI](https://klingai.com) | 商业平台工作流 |
+| [Seedance 2.0 / Dreamina](https://dreamina.capcut.com) | 字节跳动视频生成 |
+| [火山引擎 Volcengine](https://volcengine.com) | Seedance API 定价 |
 | [InVideo AI](https://invideo.io) | Web 工具分析 |
 | [MoneyPrinterTurbo Issue #716](https://github.com/harry0703/MoneyPrinterTurbo/issues/716) | 质量问题数据 |
+| [36kr](https://36kr.com) | 中国 AI 视频市场分析 |
+| [NVIDIA GDC 2026](https://nvidia.com) | ComfyUI + LTX-2.3 更新 |
 | Reddit r/aivideo, r/StableDiffusion | 用户真实反馈 |
 | CSDN 抖音 AI 工具分析 | 中国市场数据 |
 
