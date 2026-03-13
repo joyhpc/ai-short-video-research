@@ -24,7 +24,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     from src.quality_gate import evaluate
 
     topic = args.topic
-    output_dir = Path(args.output or f"./output/{int(time.time())}")
+    output_dir = Path(args.output or f"./output/{int(time.time())}").resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"[1/5] Generating script for: {topic}")
@@ -57,7 +57,13 @@ def cmd_generate(args: argparse.Namespace) -> int:
     sub_gen = SubtitleGenerator()
     srt_path = str(output_dir / "subtitles.srt")
     srt_content = sub_gen.generate(audio_path, output_path=srt_path)
-    print(f"    Subtitles: {srt_path}")
+    # Check if subtitles are valid (not just a comment/empty)
+    has_valid_srt = srt_content.strip() and not srt_content.strip().startswith("#")
+    if has_valid_srt:
+        print(f"    Subtitles: {srt_path}")
+    else:
+        print("    Subtitles: skipped (whisper not installed)")
+        srt_path = ""
 
     print("[4/5] Preparing video clips...")
     # For now, use a placeholder — real generation would call AIVideoGenerator
