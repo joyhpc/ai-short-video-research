@@ -22,8 +22,8 @@
 |  +-----------+    +-----------+    +------------+    +----------+ |
 |                                         |                  |      |
 |                                    [AI Video API]     [FFmpeg/    |
-|                                    Runway / Kling     MoviePy]    |
-|                                    / Sora / local                 |
+|                                    Veo 3.1 / Kling   MoviePy]    |
+|                                    / Runway / Sora                |
 +------------------------------+------------------------------------+
                                |
                                v
@@ -953,6 +953,56 @@ Target: quality-gated output should score >= 15% higher than MoneyPrinterTurbo o
 | **Phase 8** | Testing, benchmarking, documentation | 2 weeks | Known good/bad samples |
 
 Total estimated timeline: **10-13 weeks** for a production-ready MVP.
+
+---
+
+## Video Generation Provider Matrix (Updated 2026-03)
+
+Production-ready AI video generation providers integrated or available:
+
+| Provider | Model | Price/10s | Resolution | Duration | Audio | Status |
+|----------|-------|-----------|-----------|----------|-------|--------|
+| **Google Veo 3.1** | `veo-3.1-generate-preview` | $1.50 (Fast) / $4.00 (Std) | 4K | 8s | Native | **Default** |
+| Google Veo 2 | `veo-2.0-generate` | $3.50 | 4K | 8s | No | Integrated |
+| Runway Gen-4 | Gen-4 Turbo | $0.50 | 4K | 16s | No | Integrated |
+| Kling 3.0 | Kling API | $0.50-1.50 | 1080p | 5-10s | Yes | Integrated |
+| OpenAI Sora | Sora-2 | $1.00 | 1080p | 60s | No | Planned |
+| Hailuo (MiniMax) | Hailuo 02 | $0.14-0.28 | 1080p | 6-10s | No | Planned |
+| Pexels Stock | — | Free | Varies | Varies | No | Integrated |
+
+### Veo 3.1 Integration Architecture
+
+```python
+# google-genai SDK async polling pattern
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-preview",
+    prompt="Cinematic shot of...",
+    config=types.GenerateVideosConfig(
+        aspect_ratio="9:16",    # Vertical short video
+        number_of_videos=1,
+    ),
+)
+
+# Poll → Download → Save
+while not operation.done:
+    time.sleep(5)
+    operation = client.operations.get(operation)
+
+video = operation.response.generated_videos[0]
+client.files.download(file=video.video)
+video.video.save("output.mp4")
+```
+
+**Key design decisions:**
+- Veo 3.1 as default: best quality-to-price ratio among top-tier models
+- Native audio generation eliminates separate BGM/SFX pipeline for Veo clips
+- 9:16 aspect ratio native support matches short video format
+- Fallback chain: Veo → Kling → Pexels stock footage
 
 ---
 

@@ -151,10 +151,10 @@ videoqa-gate/
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **Phase 1** | Research and Landscape Analysis — survey existing tools, academic papers, identify gaps | ✅ Complete |
-| **Phase 2** | Quality Gate Framework — implement L1/L2/L3 layers with configurable thresholds | Planned |
-| **Phase 3** | Correction Loop — failure diagnosis, targeted re-prompting, iterative refinement | Planned |
-| **Phase 4** | Generator Adapters — plug-in adapters for MoneyPrinterTurbo, NarratoAI, ShortGPT | Planned |
-| **Phase 5** | Full Product — web UI, API server, cost optimization, production hardening | Planned |
+| **Phase 2** | Quality Gate Framework — implement L1/L2/L3 layers with configurable thresholds | ✅ Complete |
+| **Phase 3** | Correction Loop — failure diagnosis, targeted re-prompting, iterative refinement | ✅ Complete |
+| **Phase 4** | Generator Adapters — Veo 3.1, Kling, Runway, edge-tts, BGM, subtitles, FFmpeg composer | ✅ Complete |
+| **Phase 5** | Full Product — CLI, FastAPI server, Gradio Web UI, end-to-end pipeline | ✅ Complete |
 
 ## Key Research References
 
@@ -170,6 +170,8 @@ videoqa-gate/
 | [Q-Bench-Video](https://arxiv.org/abs/2404.xxxx) | Multiple | 2025 | LMM video quality judgment proficiency benchmark (CVPR 2025) |
 
 ## Documentation
+
+> **[Project Navigation & Index](docs/00-navigation.md)** — Start here for a complete overview of all docs, source code, APIs, and references.
 
 | Document | Description |
 |----------|-------------|

@@ -66,15 +66,40 @@ def cmd_generate(args: argparse.Namespace) -> int:
         srt_path = ""
 
     print("[4/5] Preparing video clips...")
-    # For now, use a placeholder — real generation would call AIVideoGenerator
-    # which requires API keys. Instead, create a test pattern video per scene.
     video_clips = []
-    for i, scene in enumerate(script.scenes):
-        clip_path = str(output_dir / f"clip_{i:03d}.mp4")
-        # Generate a simple color card with text as placeholder
-        _generate_placeholder_clip(clip_path, scene.visual_description, scene.duration_hint)
-        video_clips.append(clip_path)
-    print(f"    {len(video_clips)} clips prepared")
+    video_provider = args.video_provider
+
+    if video_provider and video_provider != "placeholder":
+        from src.pipeline.generators.ai_video import AIVideoGenerator
+        ai_gen = AIVideoGenerator(
+            default_provider=video_provider,
+            api_keys={"veo": os.environ.get("GEMINI_API_KEY", "")},
+            output_dir=str(output_dir),
+            poll_timeout=600,
+        )
+        for i, scene in enumerate(script.scenes):
+            print(f"    [{i+1}/{len(script.scenes)}] Generating: {scene.visual_description[:50]}...")
+            try:
+                clip = ai_gen.generate(
+                    prompt=scene.visual_description,
+                    provider=video_provider,
+                    duration=scene.duration_hint,
+                    width=1080,
+                    height=1920,
+                )
+                video_clips.append(clip.local_path)
+                print(f"    -> {clip.local_path}")
+            except Exception as e:
+                print(f"    -> Failed: {e}, using placeholder")
+                clip_path = str(output_dir / f"clip_{i:03d}.mp4")
+                _generate_placeholder_clip(clip_path, scene.visual_description, scene.duration_hint)
+                video_clips.append(clip_path)
+    else:
+        for i, scene in enumerate(script.scenes):
+            clip_path = str(output_dir / f"clip_{i:03d}.mp4")
+            _generate_placeholder_clip(clip_path, scene.visual_description, scene.duration_hint)
+            video_clips.append(clip_path)
+    print(f"    {len(video_clips)} clips ready")
 
     print("[5/5] Composing final video...")
     composer = VideoComposer()
@@ -261,6 +286,7 @@ def build_parser() -> argparse.ArgumentParser:
     gen_parser.add_argument("--tts-provider", default="edge-tts", choices=["edge-tts", "elevenlabs"])
     gen_parser.add_argument("--llm-provider", default=None, choices=["openai", "gemini", "fallback"])
     gen_parser.add_argument("--bgm-library", default=None, help="Path to BGM library directory")
+    gen_parser.add_argument("--video-provider", default="placeholder", choices=["veo", "kling", "runway", "placeholder"], help="Video generation provider")
     gen_parser.add_argument("--skip-eval", action="store_true", help="Skip quality evaluation")
     gen_parser.set_defaults(func=cmd_generate)
 

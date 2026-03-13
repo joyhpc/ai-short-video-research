@@ -42,7 +42,7 @@ class AIVideoGenerator:
         poll_timeout: Total timeout for polling in seconds.
     """
 
-    SUPPORTED_PROVIDERS = ("kling", "runway", "pika", "hailuo")
+    SUPPORTED_PROVIDERS = ("veo", "kling", "runway", "pika", "hailuo")
 
     # Base URLs per provider
     _BASE_URLS: dict[str, str] = {
@@ -67,6 +67,7 @@ class AIVideoGenerator:
         self.poll_timeout = poll_timeout
 
         self._dispatch: dict[str, Any] = {
+            "veo": self._generate_veo,
             "kling": self._generate_kling,
             "runway": self._generate_runway,
         }
@@ -111,7 +112,7 @@ class AIVideoGenerator:
                 f"Available: {list(self._dispatch.keys())}"
             )
 
-        if provider not in self.api_keys:
+        if provider not in self.api_keys and provider != "veo":
             raise ValueError(
                 f"No API key configured for provider '{provider}'. "
                 f"Pass it via api_keys['{provider}']."
@@ -134,6 +135,123 @@ class AIVideoGenerator:
             height=height,
             seed=seed,
             **kwargs,
+        )
+
+    # ------------------------------------------------------------------
+    # Provider: Veo 3.1  (Google Gemini API)
+    # ------------------------------------------------------------------
+
+    def _generate_veo(
+        self,
+        prompt: str,
+        duration: float,
+        width: int,
+        height: int,
+        seed: int | None,
+        **kwargs: Any,
+    ) -> VideoClip:
+        """Generate video using Google Veo 3.1 via the google-genai SDK."""
+        try:
+            from google import genai
+            from google.genai import types
+        except ImportError:
+            raise RuntimeError(
+                "google-genai is not installed. Run: pip install google-genai"
+            )
+
+        api_key = (
+            self.api_keys.get("veo")
+            or os.environ.get("GEMINI_API_KEY")
+            or os.environ.get("GOOGLE_API_KEY")
+            or ""
+        )
+        if not api_key:
+            raise ValueError(
+                "No API key for Veo. Set GEMINI_API_KEY or GOOGLE_API_KEY env var."
+            )
+
+        client = genai.Client(api_key=api_key)
+        model = kwargs.pop("model", "veo-3.1-generate-preview")
+
+        # Map dimensions to aspect ratio
+        aspect_ratio = "9:16" if height > width else "16:9"
+
+        # Veo supports 4, 6, 8 second durations
+        veo_duration = 8
+        if duration <= 4:
+            veo_duration = 4
+        elif duration <= 6:
+            veo_duration = 6
+
+        # Map to resolution
+        resolution = "720p"
+        if width >= 3840 or height >= 2160:
+            resolution = "4k"
+        elif width >= 1920 or height >= 1080:
+            resolution = "1080p"
+
+        logger.info(
+            "[veo] Generating: model=%s, aspect=%s, resolution=%s, duration=%ds",
+            model, aspect_ratio, resolution, veo_duration,
+        )
+
+        config = types.GenerateVideosConfig(
+            aspect_ratio=aspect_ratio,
+            number_of_videos=1,
+        )
+
+        operation = client.models.generate_videos(
+            model=model,
+            prompt=prompt,
+            config=config,
+        )
+
+        # Poll until done
+        elapsed = 0.0
+        while not operation.done:
+            logger.info("[veo] Waiting... elapsed=%.0fs", elapsed)
+            time.sleep(self.poll_interval)
+            elapsed += self.poll_interval
+            if elapsed > self.poll_timeout:
+                raise RuntimeError(
+                    f"[veo] Generation timed out after {self.poll_timeout:.0f}s"
+                )
+            operation = client.operations.get(operation)
+
+        logger.info("[veo] Generation complete after %.0fs", elapsed)
+
+        # Download result
+        generated_video = operation.response.generated_videos[0]
+        client.files.download(file=generated_video.video)
+
+        if self.output_dir:
+            os.makedirs(self.output_dir, exist_ok=True)
+            local_path = os.path.join(
+                self.output_dir, f"veo_{int(time.time())}.mp4"
+            )
+        else:
+            fd, local_path = tempfile.mkstemp(suffix=".mp4", prefix="veo_")
+            os.close(fd)
+
+        generated_video.video.save(local_path)
+
+        file_size = os.path.getsize(local_path)
+        logger.info("[veo] Saved: %s (%.1f MB)", local_path, file_size / 1024 / 1024)
+
+        return VideoClip(
+            local_path=local_path,
+            prompt=prompt,
+            provider="veo",
+            duration=float(veo_duration),
+            width=width,
+            height=height,
+            generation_params={
+                "model": model,
+                "aspect_ratio": aspect_ratio,
+                "resolution": resolution,
+                "seed": seed,
+                **kwargs,
+            },
         )
 
     # ------------------------------------------------------------------
