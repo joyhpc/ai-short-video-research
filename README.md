@@ -181,6 +181,7 @@ videoqa-gate/
 | [04 - Commercial Landscape](docs/04-commercial-landscape.md) | Runway, Synthesia, Kling 3.0, Jimeng, and market segmentation |
 | [05 - Gap Analysis](docs/05-gap-analysis.md) | Five major gaps, failure modes, opportunity sizing |
 | [06 - Architecture Proposal](docs/06-architecture-proposal.md) | Three-layer quality gate design, LangGraph correction loop, LangSmith observability |
+| [07 - Workflow Analysis](docs/07-workflow-analysis.md) | **AI 视频生成工作流现状分析** — 开源/商业/创作者工作流、首次可用率、成本真相 |
 
 ## Contributing
 
