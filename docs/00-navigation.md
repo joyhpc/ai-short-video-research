@@ -45,6 +45,7 @@ python3 -m src.server
 | **11** | **[One-Click Best Practices](docs/11-one-click-best-practices.md)** | **一键出片最佳实践** | GitHub 活跃项目排名、4 种创作者模式、6 个突破性技巧、工具活跃度监控 |
 | **12** | **[Ad Production Playbook](docs/12-ad-production-playbook.md)** | **广告级 AI 视频立即执行手册** | 3 条路线逐步操作、Luma Agents/Higgsfield/Frankenstein、交付检查清单 |
 | **13** | **[YouTube Creator Census](docs/13-youtube-creator-census.md)** | **YouTube AI 视频创作者图谱** | 20 个频道深度分析、工具使用频率统计、5 大工作流模式 |
+| **14** | **[Ultimate Action Plan](docs/14-ultimate-action-plan.md)** | **终极落地方案** | 40+频道+20病毒视频+市场数据→最优工具链+3条执行路径+学习路径 |
 
 ---
 
