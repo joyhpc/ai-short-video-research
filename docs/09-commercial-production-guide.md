@@ -18,8 +18,8 @@
 | 排名 | 模型 | Elo | 来源 |
 |------|------|-----|------|
 | 1 | **Runway Gen-4.5** | 1247 | Artificial Analysis 盲测 |
-| 2 | Sora 2 | — | Artificial Analysis |
-| 3 | Veo 3.1 | 1386 | SiliconFlow Arena |
+| 2 | **Seedance 2.0** (即梦) | 1235 | 综合口碑（特别是角色一致性与物理规律） |
+| 3 | Veo 3.1 | 1386 | SiliconFlow Arena (擅长写实与原生音频) |
 | — | Kling 3.0 | 竞争力强但非 #1 | 营销暗示 #1，盲测不支持 |
 
 > **Kling 3.0 的"4K/60fps"是其高端付费层功能，Reddit 用户反馈实际主要使用 1080p，且渲染经常失败或排队数小时。**
@@ -40,13 +40,12 @@
 ### 核心工具链
 
 ```
-策划         脚本          画面           配音          字幕         配乐          剪辑          交付
- │            │            │              │            │            │             │            │
-Claude    Claude/GPT-4o   Runway         ElevenLabs   CapCut      Musicbed     Premiere    多平台
- 策略        结构化脚本    Gen-4.5        中英文       卡拉OK      商用授权      精修调色     自适应
- 洞察        + Prompt      (主力)         克隆声音     自动+人工   /Artlist      +特效       导出
-             工程         Veo 3.1                     校对                     DaVinci
-                          (补充)
+策划         脚本          画面                  配音          字幕         配乐          剪辑          交付
+ │            │            │                     │            │            │             │            │
+Claude    Claude/GPT-4o   Runway Gen-4.5        ElevenLabs   CapCut      Musicbed     Premiere    多平台
+ 策略        结构化脚本    / Seedance 2.0 (即梦) 中英文       卡拉OK      商用授权      精修调色     自适应
+ 洞察        + Prompt      Veo 3.1 (写实/音频)    克隆声音     自动+人工   /Artlist      +特效       导出
+             工程         (根据场景三选一)                    校对                     DaVinci
 ```
 
 ---
@@ -139,78 +138,59 @@ Claude    Claude/GPT-4o   Runway         ElevenLabs   CapCut      Musicbed     P
 
 ## 第 3 步：AI 视频画面生成
 
-### 主力工具：Runway Gen-4.5
+**视觉大模型呈“三足鼎立”态势，商业制片不再依赖单一工具。请根据具体的脚本需求，选择最合适的模型。**
 
-**为什么选 Runway（不是 Kling/Veo）：**
-- 独立盲测 Elo #1（Artificial Analysis）
-- 首次可用率 73%（商业平台最高）
-- 视觉保真度最强——液体/发丝/织物纹理业内最好
-- 角色/服装/环境一致性跨帧保持
-- Gen-4 支持最长 60 秒连续视频
-- Motion Brush 3.0 精细运动控制
-- Director Mode 节点式镜头/灯光控制
-- 已集成 Adobe Firefly，可与 Premiere 联动
+### 视频大模型横向对比与选型指南
 
-**补充工具：Veo 3.1（原生音频场景）**
-- 需要原生对话/环境音的镜头用 Veo
-- 写实感/物理感强
-- 但首次可用率低（15-20%），需多次生成
+| 维度 | Runway Gen-4.5 | Seedance 2.0 (即梦) | Veo 3.1 |
+|------|----------------|---------------------|---------|
+| **核心优势** | 视觉保真度极高、微观质感无敌 | 角色一致性（`@`系统）、动作迁移 | 极致写实人类动作、物理光影、原生音频 |
+| **最佳场景** | 微距特写、流体/织物、氛围意境 | 剧情连贯、固定模特换装/转场 | 日常生活实拍感、带环境音效的镜头 |
+| **控制方式** | Motion Brush、Director Mode | 垫图控制、`@`标签系统 | 强语义理解、基于物理引擎生成 |
+| **首帧可用率** | ~73% (Image-to-Video可达85%) | ~90% (前5-8秒极高) | ~20% (需多次抽卡) |
+| **隐患/缺点** | 强动作容易变形 | "10秒衰减定律"（10秒后易崩坏）| 抽卡成本高、偶有光影跳跃 |
 
-### 订阅方案
+### 主力工具 1：Runway Gen-4.5 (适用于氛围与质感表达)
+**最佳实践：** 适合“抽象隐喻”、“微观世界”（如水波纹、琴弦崩断）和高端产品意境展示。
+- **图生视频为主**：用 MidJourney/DALL-E 垫首帧图。
+- **Motion Brush**：利用运动画笔精细控制局部运动。
+- **Prompt结构**：`[镜头类型], [主体描述], [动作/运动], [环境/场景], [光照], [色调/氛围], [镜头运动]. [风格参考]`
+
+### 主力工具 2：Seedance 2.0 / 即梦 (适用于角色连贯与复杂调度)
+**最佳实践：** 具备“导演级”控制能力，是国内最成熟的商业级工具。
+- **“10秒法则”**：将长镜头拆分为 **5-8秒** 的短片段拼接，避免 10 秒后的形态崩坏。
+- **`@` 引用系统（杀手锏）**：上传模特照片标记为 `@Image1`，动作视频标记为 `@Video1`，实现极强的一致性（如：`@Image1 performs the motion from @Video1`）。
+- **“导演制”提示词 6 元素**：`[主体], [动作], [运镜], [环境], [光影], [画质风格]`。
+- **控制幅度**：在后台将动态幅度（Motion Strength）拉低至 30%-40%，微动效果更具电影感。
+
+### 补充工具：Veo 3.1 (适用于写实剧情与原生声音)
+**最佳实践：** 适合生成真实人脸细微表情、写实动作，以及需要环境声的镜头。
+- **原生音频融合**：Prompt 结尾加入 `"with ambient café sounds, soft jazz music..."`，Veo 会同时生成视频与匹配音效。
+
+### 订阅方案参考
 
 | 工具 | 套餐 | 月费 | 说明 |
 |------|------|------|------|
 | **Runway** | Unlimited | $76/月 | 无限生成，Gen-4/4.5 全访问 |
+| **即梦 (Seedance)** | 商业版 | ~￥399/月 | 满足高频商用导出，国内网络友好 |
 | **Veo 3.1** | Google AI Ultra | $249.99/月 | 最高配额，4K 输出 |
-| **Sora 2** | ChatGPT Pro | $200/月 | 10000 credits，最长 25s |
 
-**推荐：Runway Unlimited ($76) 为主力 + Veo 按需付费 ($0.15/s)。**
-
-### Runway 生成最佳实践
-
-**Prompt 结构（英文，给 Runway Gen-4.5）：**
+### 画面生成工作流 (通用)
 
 ```
-[镜头类型], [主体描述], [动作/运动], [环境/场景], [光照], [色调/氛围], [镜头运动]. [风格参考].
-
-示例：
-Close-up shot, a woman's hand gently placing a luxury skincare bottle on a marble countertop, soft natural window light with warm golden tones, shallow depth of field with bokeh background, slow dolly-in movement. Cinematic commercial quality, anamorphic lens flare.
-```
-
-**提升成功率的技巧：**
-1. **首帧图片引导**：用 MidJourney/DALL-E 先生成一张"首帧参考图"，再用 Runway Image-to-Video，成功率从 ~73% 提升到 ~85%+
-2. **Motion Brush**：对特定区域指定运动方向和强度
-3. **固定镜头 seed**：同一场景多次生成时锁定 seed 保持风格一致
-4. **短片段拼接**：5-10 秒片段比直接生成 60 秒质量更高更可控
-
-### 画面生成工作流
-
-```
-脚本每个场景：
+脚本每个场景（控制在 5-8 秒内）：
   │
-  ├── Step A：MidJourney/DALL-E 生成首帧参考图
-  │     Prompt：脚本中的英文画面描述
-  │     选择最佳构图的一张
+  ├── Step A：MidJourney 生成首帧参考图（确保全片色彩/主角一致）
   │
-  ├── Step B：Runway Gen-4.5 Image-to-Video
-  │     输入：首帧图 + 运动描述
-  │     生成 2-3 个候选（Route B 筛选）
-  │     选最佳一个
+  ├── Step B：选择模型进行 Image-to-Video
+  │     ├─ 追求质感与微距 → Runway Gen-4.5
+  │     ├─ 追求动作连贯/IP一致性 → Seedance 2.0 (即梦)
+  │     └─ 追求极致写实/声音 → Veo 3.1
   │
-  ├── Step C（可选）：不满意？调整 Prompt 重新生成
-  │     分析哪里不好 → 修改描述 → 重新生成
+  ├── Step C：应用提示词框架（如 Seedance 的 6 元素结构）
+  │     生成 3-5 个候选（按需调低 Motion Strength 以增加稳定性）
   │
-  └── 输出：该场景的最佳视频片段
-```
-
-### 需要原生音频的场景用 Veo 3.1
-
-```
-Google AI Studio → Veo 3.1:
-  Prompt 中加入音频提示：
-  "...with ambient café sounds, soft jazz music in the background, and the sound of coffee being poured"
-
-  Veo 会同时生成视频 + 匹配的音效/音乐
+  └── 输出：选出最佳视频片段
 ```
 
 ---
@@ -405,13 +385,13 @@ Google AI Studio → Veo 3.1:
 
 | 项目 | 月费 | 说明 |
 |------|------|------|
-| Runway Unlimited | $76 | 主力视频生成 |
+| Runway / 即梦商业版 | ~$55-76 | 主力视频生成（根据需求二选一即可） |
 | ElevenLabs Pro | $99 | 高品质配音 |
 | MidJourney Standard | $30 | 首帧参考图 |
 | Artlist | $17 | 商用音乐授权 |
 | CapCut Pro | $20 | 剪辑+字幕 |
-| Veo 3.1 按需 | ~$30-50 | 原生音频场景 |
-| **合计** | **~$272-292/月** | |
+| Veo 3.1 按需 | ~$30-50 | 特殊写实/原生音频场景 |
+| **合计** | **~$251-292/月** | |
 
 **用这套工具链，一人可完成原本需要 4-5 人团队（编导+摄像+剪辑+调色+后期）的工作，且画面质量达到商业广告标准。**
 
