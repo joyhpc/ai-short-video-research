@@ -42,6 +42,7 @@ python3 -m src.server
 | 08 | [Best Practices](docs/08-best-practices.md) | **AI 短视频生产最佳实践指南** | 4 套完整工作流、6 步实操手册、按预算选工具、Prompt 模板 |
 | 09 | [Commercial Production](docs/09-commercial-production-guide.md) | **商业广告 AI 制作方案（落地版）** | 反投毒选型、Runway 为主力、完整广告工作流、月费 ~$280 |
 | **10** | **[Ultimate Guide](docs/10-ultimate-guide.md)** | **AI 短视频制作终极指南** | 4 套工作流、8 步全流程、Prompt 模板、质量检测、自动化引擎、成本计算 |
+| **11** | **[One-Click Best Practices](docs/11-one-click-best-practices.md)** | **一键出片最佳实践** | GitHub 活跃项目排名、4 种创作者模式、6 个突破性技巧、工具活跃度监控 |
 
 ---
 
