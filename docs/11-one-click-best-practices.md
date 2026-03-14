@@ -223,3 +223,69 @@ Prompt: "...No background music. Only natural ambient sounds and dialogue."
 | Higgsfield AI 官方文档 | 功能确认 |
 | ComfyUI 社区 + NVIDIA GDC 2026 | 技术更新 |
 | Bilibili AI 视频教程 | 中国市场实践 |
+
+---
+
+## 六、本周最新验证（2026-03-14 交叉验证 Grok 信息）
+
+以下信息经过独立 GitHub/Web 交叉验证，标注可信度：
+
+### 新发现工具
+
+| 工具 | 验证状态 | Stars | 说明 |
+|------|---------|-------|------|
+| **[Luma Agents](https://lumalabs.ai)** | ✅ 已验证 | — | **2026-03-05 刚发布（9 天前）**！多模型编排 Agent，调用 Sora 2/Veo 3.1/Kling/ElevenLabs，共享品牌上下文。$30-300/月 |
+| **[ComfyUI-WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper)** | ✅ 已验证 | **6,168** | kijai 维护，140 万下载。支持 1025 帧输出（滑窗 81 帧+16 重叠）、SteadyDancer 稳定器、LoRA、VRAM 优化 |
+| **[ComfyUI-Kie-API](https://github.com/gateway/ComfyUI-Kie-API)** | ✅ 已验证 | 21 | Kling 3.0 Motion-Control I2V 节点，2026-03-13 更新。预检验证、元素批量、廉价代理 |
+| **[Grok Imagine API](https://x.ai)** | ✅ 已验证 | — | xAI 视频/图像 API，$0.70/10s 视频。Aurora 模型，原生 A/V 同步。⚠️ 注意：Grok 推荐自家产品存在利益冲突 |
+| **[Abacus.AI ChatLLM](https://abacus.ai)** | ✅ 已验证 | — | $10/月 20K credits，多模型聚合（GPT/Gemini/Claude/Veo/Runway 等） |
+| **[Kie.ai](https://kie.ai)** | ✅ 已验证 | — | Kling API 代理，$0.025/s 起（Kling 2.1），比官方便宜约 60% |
+| **[n8n 模板 #3121](https://n8n.io/workflows/3121)** | ✅ 已验证 | — | "AI 短视频生成器"：Google Sheet → OpenAI → Flux → Kling I2V → ElevenLabs → 发布 |
+
+### 关键纠正
+
+| Grok 声称 | 实际情况 |
+|-----------|---------|
+| "Wan 2.6 开源模型" | ❌ **Wan 2.6 是商业 API（阿里云），非开源**。开源版最新为 Wan 2.1 (15.6k ⭐) 和 Wan 2.2 (14.6k ⭐) |
+| "完全取代 MoneyPrinterTurbo/Pixelle-Video" | ❌ **幻觉**。MPT 50K stars 仍活跃，Pixelle-Video 在增长中 |
+| "日产 500+ 视频" | ⚠️ 模板变体可能，独特内容不现实 |
+| "1025 帧窗口" | ⚠️ 准确说是 1025 帧**输出**（滑窗 81 帧），不是 1025 帧窗口 |
+
+### 2026.03 工具栈全景（验证后更新版）
+
+```
+                    ┌─────────────────────────────┐
+                    │     编排层（三选一）           │
+                    │  n8n / Make / Coze           │
+                    └──────────┬──────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+    ┌─────────▼─────────┐  ┌──▼──────────┐  ┌──▼──────────────┐
+    │ 本地渲染（ComfyUI）│  │ API 聚合器   │  │ Agent 平台       │
+    │ + WanVideoWrapper │  │ Kie.ai      │  │ Luma Agents (新!)│
+    │ + LTX-2.3        │  │ fal.ai      │  │ Higgsfield      │
+    │ + Kie-API 节点    │  │ Abacus.AI   │  │ Coze Agent      │
+    └───────────────────┘  └─────────────┘  └─────────────────┘
+              │                │                │
+              └────────────────┼────────────────┘
+                               │
+              ┌────────────────▼────────────────┐
+              │         视频生成模型              │
+              │  商业：Kling 3.0 / Veo 3.1 /    │
+              │        Runway 4.5 / Seedance 2.0│
+              │        / Grok Imagine (新!)      │
+              │  开源：Wan 2.1 / LTX-2 /        │
+              │        SkyReels-V2              │
+              └─────────────────────────────────┘
+```
+
+### 快速上手路径（验证后推荐）
+
+| 级别 | 方案 | 首次出片时间 |
+|------|------|------------|
+| **新手** | 导入 [n8n 模板 #3121](https://n8n.io/workflows/3121) + Kie.ai API Key | **1 小时** |
+| **进阶** | ComfyUI + [Kie-API 节点](https://github.com/gateway/ComfyUI-Kie-API) + [WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) | 半天 |
+| **生产级** | n8n 编排 + ComfyUI 本地渲染 + Luma Agents 多模型 | 1-2 天 |
+| **零成本** | [Pixelle-Video](https://github.com/AIDC-AI/Pixelle-Video) + Ollama 本地 LLM | 2-3 小时 |
+| Bilibili AI 视频教程 | 中国市场实践 |
