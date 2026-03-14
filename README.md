@@ -182,6 +182,7 @@ videoqa-gate/
 | [05 - Gap Analysis](docs/05-gap-analysis.md) | Five major gaps, failure modes, opportunity sizing |
 | [06 - Architecture Proposal](docs/06-architecture-proposal.md) | Three-layer quality gate design, LangGraph correction loop, LangSmith observability |
 | [07 - Workflow Analysis](docs/07-workflow-analysis.md) | **工具链选型与工作流分析** — 推荐方案、2月大爆发、Kling/Seedance/Veo对比、路线C决策 |
+| [08 - Best Practices](docs/08-best-practices.md) | **AI 短视频生产最佳实践指南** — 4套完整工作流、6步实操手册、Prompt模板 |
 
 ## Contributing
 
