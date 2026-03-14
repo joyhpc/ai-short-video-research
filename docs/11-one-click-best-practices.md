@@ -145,6 +145,139 @@ Google Sheet 内容队列
 4. 导入 [n8n 模板 #3121](https://n8n.io/workflows/3121)（AI 短视频生成器模板）
 5. 填入所有 API Key → 连接 Google Sheet → 开跑
 
+### 模式 2.5："Smart Router"（自动化 Frankenstein，终极方案）
+
+> **核心问题：为什么手动 Frankenstein 画质最高？**
+>
+> 因为没有任何单一模型在所有场景上最强：
+>
+> - Runway → 质感/微距第一，但角色一致性差
+> - Seedance → 角色锁定第一，但 10 秒后崩坏
+> - Veo → 对话/唇形第一，但首次可用率只有 15-20%
+> - Kling → 运动/物理第一，但渲染经常失败
+>
+> 手动 Frankenstein 画质最高，是因为**人在做"路由"**——根据每个镜头需求手动选最强模型。
+>
+> 以下方案用 n8n 把这个"人工路由"自动化——**LLM 做场景分类，n8n 做模型路由，全程零手动。**
+
+**当前三种自动化 Frankenstein 的工具对比：**
+
+| 工具 | 做法 | 成熟度 | 限制 |
+|------|------|--------|------|
+| [Luma Agents](https://lumalabs.ai) | Agent 自动选模型+编排 | 🟡 2026-03-05 刚发布 | 太新，稳定性待验证 |
+| [Higgsfield](https://higgsfield.ai) | 并行跑多模型，人选最佳 | 🟢 较成熟 | 仍需人选，非全自动 |
+| **n8n 智能路由（下方详解）** | LLM 分类场景 → 自动路由到不同 API | 🟢 可用 | 需一次性搭建 |
+
+**n8n 智能路由管道——完整配置：**
+
+```
+Google Sheet 输入广告 Brief
+    │
+    ▼
+┌─ Claude/GPT 节点 ─────────────────────────────────┐
+│  Prompt: "分析这个广告 Brief，输出 JSON 脚本。     │
+│  每个场景标注 type 和最适合的模型：                  │
+│  texture(质感)→runway, character(角色)→seedance,   │
+│  dialogue(对话)→veo, motion(运动)→kling"           │
+│                                                    │
+│  输出示例：                                         │
+│  {                                                 │
+│    "scenes": [                                     │
+│      {"id":1, "type":"texture",   "model":"runway",│
+│       "prompt":"Close-up of cream on marble..."},  │
+│      {"id":2, "type":"character", "model":"seedance│
+│       "prompt":"Model turns to camera..."},        │
+│      {"id":3, "type":"dialogue",  "model":"veo",   │
+│       "prompt":"Person says 'Welcome'..."}         │
+│    ]                                               │
+│  }                                                 │
+└────────────────────────┬───────────────────────────┘
+                         │
+                         ▼
+┌─ Split In Batches 节点 ─┐  (把 JSON 数组拆成单个场景)
+└────────────┬────────────┘
+             │
+             ▼
+┌─ Switch 节点 ──────────────────────────────────────┐
+│  按 scene.model 值路由到不同 API：                   │
+│                                                     │
+│  "runway"   → HTTP Request 节点                     │
+│               POST https://piapi.ai/api/runway      │
+│               Body: { prompt, image(首帧图URL) }     │
+│                                                     │
+│  "seedance" → HTTP Request 节点                     │
+│               POST https://kie.ai/api/seedance      │
+│               Body: { prompt, reference_images }     │
+│                                                     │
+│  "veo"      → HTTP Request 节点                     │
+│               POST Gemini API (Veo 3.1)             │
+│               Body: { prompt + "No background music"}│
+│                                                     │
+│  "kling"    → HTTP Request 节点                     │
+│               POST https://kie.ai/api/kling         │
+│               Body: { prompt, motion_ref_video }     │
+└─────────────────────────┬───────────────────────────┘
+                          │
+                          ▼
+┌─ Merge 节点 ────────────┐  (等待所有场景完成，合并结果)
+└────────────┬────────────┘
+             │
+             ▼
+┌─ ElevenLabs 节点 ───────┐  (生成旁白配音)
+│  API: elevenlabs.io      │
+│  Voice: 按 Brief 选择    │
+└────────────┬────────────┘
+             │
+             ▼
+┌─ Code 节点 (FFmpeg) ────┐  (合成所有片段+配音+字幕)
+│  ffmpeg -i clip1.mp4     │
+│    -i clip2.mp4 ...      │
+│    -i narration.mp3      │
+│    -filter_complex "..."  │
+│    output.mp4            │
+└────────────┬────────────┘
+             │
+             ▼
+┌─ Google Drive 节点 ─────┐  (上传成片)
+└────────────┬────────────┘
+             │
+             ▼
+┌─ Blotato 节点 ──────────┐  (自动发布到 5 个平台)
+│  YouTube / TikTok /      │
+│  Instagram / 抖音 / 小红书│
+└──────────────────────────┘
+```
+
+**搭建步骤（半天完成，长期复用）：**
+
+1. 安装 [n8n](https://docs.n8n.io/hosting/installation/)：`npx n8n` 或 Docker
+2. 注册 API Key（各一个）：
+   - [PiAPI](https://piapi.ai) — Runway + Flux 接入（$10/月起）
+   - [Kie.ai](https://kie.ai) — Kling + Seedance 接入（$0.025/s 起）
+   - [Google AI Studio](https://aistudio.google.com) — Veo 3.1 API（$0.15/s）
+   - [ElevenLabs](https://elevenlabs.io) — 配音（$22/月起）
+3. 在 n8n 中创建 Workflow → 按上图添加节点
+4. Claude/GPT 节点的 System Prompt 写明场景分类规则
+5. Switch 节点配置 4 个分支（runway/seedance/veo/kling）
+6. 每个分支的 HTTP Request 节点填入对应 API 的 endpoint + key
+7. Code 节点写 FFmpeg 合成命令
+8. 测试：Google Sheet 输入一个 Brief → 检查全流程
+
+**为什么这是终极方案：**
+- 自动化了"人工路由"——LLM 判断场景类型，n8n 分发到最强模型
+- 每个镜头用该场景的最强模型，不妥协
+- 全程零手动，Google Sheet 输入 Brief 即出成片
+- 一次搭建，永久复用，可随时换更好的模型
+
+**对比：**
+
+| 方案 | 画质 | 自动化 | 搭建成本 |
+|------|------|--------|---------|
+| 手动 Frankenstein | ★★★★★ | 手动 | 无 |
+| Luma Agents | ★★★★ | 全自动 | 注册即用 |
+| Higgsfield | ★★★★ | 半自动 | 注册即用 |
+| **n8n 智能路由** | **★★★★★** | **全自动** | **半天搭建** |
+
 ### 模式 3："The Aggregator"（省事但有效）
 
 > **用一个聚合平台同时调用多个模型，选最好的。**
@@ -276,11 +409,36 @@ Prompt: "...No background music. Only natural ambient sounds and dialogue."
 
 ---
 
-## 四、按需求选工具
+## 四、中国市场专属的“一键成片”与大模型生态 (2026 版)
+
+如果你人在国内，或者主要面向国内受众（抖音/视频号/小红书），国内的生态实际上比海外**自动化程度更高、使用门槛更低**。国内的方案呈“两极分化”：一极是傻瓜式的“真·一键成片”，另一极是超越 Sora 的影视级生成大模型。
+
+### 1. 傻瓜式一键出片（适合起号与下沉市场）
+这些工具不需要你懂任何节点流或 Agent 编排，只要输入一句话，系统即可连同配音、字幕和视频片段一起拼接生成。
+*   **剪映 (CapCut) 一键成片**：国内**绝对的普适主流**。背靠字节跳动庞大的素材库和即梦 (Seedance) 模型，你只需输入文案，它会自动抓取画面进行缝合，并配好抖音爆款 BGM。目前 80% 的营销号和个人创作者都在使用，是真正的国民级一键出片工具。
+*   **百度“度加”创作工具 (AI成片)**：背靠百度搜索和文心一格，特色是“资料自动搜集匹配”。极其适合做科普、历史、新闻盘点，一句话即可生成 3 分钟带有丰富配图的知识类短视频。
+*   **腾讯智影**：**数字人/口播领域的主流**。对于不需要真人露脸但需要一个“虚拟主播”的账号，智影的数字人播报和一键短视频生成体验在国内属于第一梯队。
+
+### 2. 影视级大模型（适合商业广告与微电影）
+如果你需要完全掌控画面的生成（不使用现成素材），国内目前是**双雄争霸**：
+*   **快手 可灵 AI (Kling 3.0)**：目前**综合画质与物理规律的国内天花板**。支持 4K 60fps，带有极强的“主体库”（锁定角色面部不变）以及原生自带音效（音画同出）。如果你拍高端商业广告（如高质感的智能枕头），首选可灵。
+*   **字节跳动 即梦 AI (Seedance 2.0)**：目前**多镜头连贯与多模态控制的王者**。依托抖音生态，它极度擅长短视频的“爆款视觉”，且支持高达 12 种参考文件的混合输入。对于需要多场景连贯叙事的短视频，即梦是最佳选择。
+*   **智谱清影 (Qingying)**：主打“极致的生成速度与性价比”，带有原生音效，非常适合高频的日常社交媒体内容产出。
+
+### 3. 本地化与开源底层引擎
+*   **阿里 Wan 2.1 / 2.2**：2025/2026年国内开源的绝对骄傲，VBench 盲测跑分多次超越 Sora。仅需 8GB-14GB 显存即可在本地跑出电影级画面，是国内极客、AI 实验室和技术工作室用 ComfyUI 搭建本地自动化流水线的首选基座。
+
+**国内选型一句话总结**：
+图省事起号就用 **剪映一键成片 / 百度度加**；拍大片追求质感就用 **可灵 3.0**；拍连续剧情追求爆款就用 **即梦 2.0**；本地懂代码写节点就用 **Wan 2.1**。
+
+---
+
+## 五、按需求选工具
 
 | 我要... | 用这个 | 链接 | 为什么 |
 |---------|--------|------|--------|
-| **零成本一键出片** | Pixelle-Video + Ollama | [GitHub](https://github.com/AIDC-AI/Pixelle-Video) / [Ollama](https://ollama.ai) | 全开源，Apache 2.0 |
+| **零门槛一键出片(国内)**| 剪映一键成片 / 度加 | [剪映](https://jianying.com) / [度加](https://aigc.baidu.com) | 国民级工具，极度傻瓜化 |
+| **零成本一键出片(开源)**| Pixelle-Video + Ollama | [GitHub](https://github.com/AIDC-AI/Pixelle-Video) / [Ollama](https://ollama.ai) | 全开源，Apache 2.0 |
 | **零成本素材库出片** | MoneyPrinterTurbo | [GitHub](https://github.com/harry0703/MoneyPrinterTurbo) | 50k stars，最大社区 |
 | **视频解说/混剪** | NarratoAI | [GitHub](https://github.com/linyqh/NarratoAI) | 最活跃（2026.03.10），VLM 场景分析 |
 | **视频翻译/配音** | KrillinAI | [GitHub](https://github.com/krillinai/KrillinAI) / [klic.studio](https://klic.studio) | 100+ 语言，声音克隆 |
@@ -294,7 +452,7 @@ Prompt: "...No background music. Only natural ambient sounds and dialogue."
 
 ---
 
-## 五、工具活跃度监控（截至 2026-03-14）
+## 六、工具活跃度监控（截至 2026-03-14）
 
 | 项目 | 链接 | 最后提交 | 趋势 | 建议 |
 |------|------|---------|------|------|
