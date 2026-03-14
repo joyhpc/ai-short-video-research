@@ -365,6 +365,27 @@ Text/Image Prompt → 5-25s 视频 → 1080p → 故事板/延展
 | **WaveSpeedAI** | [wavespeed.ai](https://wavespeed.ai) | 多模型聚合平台（600+ 模型） |
 | **即创 iClip** | — | RPA 机器人：采集/适配/发布/多账号 |
 
+### 6.5 自动化工作流引擎 (2026 最新基建)
+
+目前商业化团队和极客创作者正在将分散的 API 通过**自动化引擎**串联，实现 "Agentic Workflow"（智能体工作流）：
+
+1. **节点式本地管道（视觉向）：ComfyUI**
+   - **定位**：最高自由度的视觉控制管道。
+   - **用法**：通过安装 LTX-2, Wan 2.2, 或 HunyuanVideo 的自定义节点，实现从 `Midjourney生图 -> ComfyUI局部重绘 -> ComfyUI视频生成 -> 自动放大(Upscale)` 的全本地自动化。适合有高配 GPU（24GB+ VRAM）的极客工作室。
+
+2. **低代码 Agent 平台（逻辑向）：Coze / Dify / FastGPT**
+   - **定位**：LLM 驱动的商业全自动流水线。
+   - **用法**：在 Coze 中编排 Agent，触发词为“帮我生成一个助眠枕头广告”。
+     - 节点 A（LLM）：解析用户需求，输出 5 段分镜 Prompt。
+     - 节点 B（API）：调用 Runway / Seedance 官方或第三方聚合 API 生成视频。
+     - 节点 C（API）：调用 ElevenLabs TTS 生成配音。
+     - 节点 D（代码）：调用 FFmpeg 脚本或 CapCut API 自动合并。
+   - **优势**：极大地降低了人工复制粘贴 Prompt 的成本，实现从“文案到成片”的闭环。
+
+3. **企业级集成：Make.com / n8n / Zapier**
+   - **定位**：触发器与多平台分发中心。
+   - **用法**：监听 Notion 数据库状态。当内容策划将状态改为“Ready”，n8n 自动抓取内容 -> 调用 Coze 的视频生成 Agent -> 下载成品 -> 自动发布到 YouTube Shorts 和 TikTok。
+
 ---
 
 ## 7. 十大质量问题
