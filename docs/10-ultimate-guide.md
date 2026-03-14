@@ -563,6 +563,69 @@ Notion 数据库状态变更 → n8n Webhook 触发
     └── Instagram Reels API
 ```
 
+### Pixelle-Video：全开源一键出片（阿里 AIDC-AI）
+
+**GitHub:** [AIDC-AI/Pixelle-Video](https://github.com/AIDC-AI/Pixelle-Video) | 许可证: Apache 2.0
+
+输入主题 → 自动脚本 → AI 图片/视频 → TTS 旁白 → BGM → 合成出片。
+
+```bash
+git clone https://github.com/AIDC-AI/Pixelle-Video
+# 配置 LLM 后端（GPT/DeepSeek/Ollama/通义千问）
+# 配置图像生成模型
+# 运行：输入主题字符串，系统自动跑通全流程
+```
+
+支持：自定义素材上传、动作迁移、数字人口播、多语言 TTS、image-to-video。
+
+### MCP Server：让 Claude/Cursor 直接生成视频
+
+| MCP Server | 能力 | 安装 |
+|------------|------|------|
+| **Kling AI MCP** | 13+ 工具：文生视频、图生视频、特效、唇形同步 | [GitHub](https://github.com/chuanky/kling-ai-mcp-server) |
+| **Remotion MCP** | React 编程式视频创作，3D/字幕/动画 | [remotion.dev](https://remotion.dev) |
+| **Remotion Video Gen** | Claude 直接创建和渲染视频 | [MCP Market](https://mcpmarket.com) |
+
+```json
+// Claude Desktop MCP 配置示例（Kling AI）
+{
+  "mcpServers": {
+    "kling-ai": {
+      "command": "node",
+      "args": ["path/to/kling-mcp/index.js"],
+      "env": { "KLING_ACCESS_KEY": "...", "KLING_SECRET_KEY": "..." }
+    }
+  }
+}
+```
+
+### ComfyUI Wan 2.2 具体配置
+
+**模型文件：**
+```
+models/diffusion_models/
+  └── wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors  (Image-to-Video 14B)
+models/clip/ 或 models/text_encoders/
+  └── umt5_xxl_fp8_e4m3fn_scaled.safetensors
+models/vae/
+  └── wan2.2_vae.safetensors
+models/loras/
+  └── wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors  (加速 LoRA)
+```
+
+**必装自定义节点：** ComfyUI-GGUF, ComfyUI-KJNodes, ComfyUI-VideoHelperSuite, ComfyUI-mxToolkit, ComfyUI-Frame-Interpolation, ComfyUI-wanBlockswap, ComfyUI-MagCache
+
+**参数：** Steps 15-30, Guidance Scale 6, 分辨率 720p
+
+### 中国市场批量工具
+
+| 工具 | 定位 | 优势 |
+|------|------|------|
+| **红鸦AI** | 小红书矩阵批量图文 | 20 条/天，全套风格一致 |
+| **豆包** | 抖音优化脚本+视频 | 理解"黄金 3 秒"规则 |
+| **即梦** | 低成本视频生成 | CapCut 深度集成 |
+| **Pixelle-Video** | 全开源全自动出片 | Apache 2.0，可商用 |
+
 ---
 
 ## 12. 成本与 ROI 计算
