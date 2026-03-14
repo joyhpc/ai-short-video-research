@@ -40,6 +40,7 @@ python3 -m src.server
 | 06 | [Architecture Proposal](docs/06-architecture-proposal.md) | Core system architecture design | Three-layer gate, LangGraph, Veo 3.1, LangSmith |
 | 07 | [Workflow Analysis](docs/07-workflow-analysis.md) | **工具链选型与工作流分析** (2026.03) | 推荐方案、2 月大爆发、Kling/Seedance/Veo 对比、路线 C 决策 |
 | 08 | [Best Practices](docs/08-best-practices.md) | **AI 短视频生产最佳实践指南** | 4 套完整工作流、6 步实操手册、按预算选工具、Prompt 模板 |
+| 09 | [Commercial Production](docs/09-commercial-production-guide.md) | **商业广告 AI 制作方案（落地版）** | 反投毒选型、Runway 为主力、完整广告工作流、月费 ~$280 |
 
 ---
 
