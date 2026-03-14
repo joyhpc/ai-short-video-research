@@ -41,6 +41,7 @@ python3 -m src.server
 | 07 | [Workflow Analysis](docs/07-workflow-analysis.md) | **工具链选型与工作流分析** (2026.03) | 推荐方案、2 月大爆发、Kling/Seedance/Veo 对比、路线 C 决策 |
 | 08 | [Best Practices](docs/08-best-practices.md) | **AI 短视频生产最佳实践指南** | 4 套完整工作流、6 步实操手册、按预算选工具、Prompt 模板 |
 | 09 | [Commercial Production](docs/09-commercial-production-guide.md) | **商业广告 AI 制作方案（落地版）** | 反投毒选型、Runway 为主力、完整广告工作流、月费 ~$280 |
+| **10** | **[Ultimate Guide](docs/10-ultimate-guide.md)** | **AI 短视频制作终极指南** | 4 套工作流、8 步全流程、Prompt 模板、质量检测、自动化引擎、成本计算 |
 
 ---
 
